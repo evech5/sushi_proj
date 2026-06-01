@@ -6,7 +6,7 @@ html {
 }
 
 :root {
-    --border-radius: 0px;
+    --border-radius: 12px;
     --buttons-border-radius: 20px;
     --bg-main: #fcfcfc;
     --bg-dark: #111111;
