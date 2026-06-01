@@ -6,7 +6,7 @@ html {
 }
 
 :root {
-    --border-radius: 12px;
+    --border-radius: 0px;
     --buttons-border-radius: 20px;
     --bg-main: #fcfcfc;
     --bg-dark: #111111;
@@ -254,22 +254,61 @@ section {
     scroll-margin-top: 100px;
 }
 
+/* 1. Обновляем базовый класс карточки */
 .item {
     display: flex;
     flex-direction: column;
     height: 100%;
     border-radius: var(--border-radius);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, outline 0.2s ease;
+    /* Добавляем relative, чтобы псевдоэлемент позиционировался внутри карточки */
+    position: relative; 
+    /* Обрезаем фон, чтобы он не выходил за скругленные углы */
+    overflow: hidden; 
+    
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     background-color: white;
     padding-bottom: 15px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     box-sizing: border-box;
     cursor: pointer;
+    z-index: 1; /* Чтобы содержимое было поверх фона */
+}
+
+/* 2. Создаем фоновый слой */
+.item::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%; /* Изначально высота 0 */
+    background-color: var(--bg-dark);
+    transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1; /* Фон позади текста */
+}
+
+/* 3. Эффект при наведении */
+.item:hover::before {
+    height: 100%; /* При наведении заполняет всю карточку */
 }
 
 .item:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 4. Плавное изменение цвета текста */
+.item:hover .title,
+.item:hover .desc,
+.item:hover .price {
+    color: white !important;
+    transition: color 0.5s ease;
+}
+
+/* Дополнительно: чтобы картинка не конфликтовала с фоном */
+.item:hover .img-box {
+    opacity: 0.9;
 }
 
 .title,
