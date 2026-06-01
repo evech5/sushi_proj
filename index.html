@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/fe6925ae5e.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style/style.css">
+    <script src="script/script.js" defer></script>
+    <script src="script/filter.js" defer></script>
+    <!--<script src="script/auth.js" defer></script>-->
+</head>
+
+<body>
+
+    <header id="header">
+        <img src="images/logo.png" id="logoMock" alt="Логотип">
+        <div id="leftButtons">
+            <button id="burgerMenuBtn"><i class="fa-solid fa-bars"></i></button>
+
+            <div id="searchContainer">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input id="searchInput" type="text" placeholder="Поиск" autocomplete="off">
+                <div id="searchSuggestions" class="search-suggestions"></div>
+            </div>
+        </div>
+
+        <div id="rightButtons">
+            <div class="auth-wrapper" style="position: relative; display: flex;">
+                <button id="logIn" data-logged="false">
+                    <span>Войти</span>
+                    <i class="fa-solid fa-user"></i>
+                </button>
+
+                <div id="authDropdown" class="auth-dropdown">
+                    <button id="logoutBtn">Выйти</button>
+                </div>
+            </div>
+
+            <button id="basket">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <span>0 ₸</span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <nav id="categories">
+            <a href="#">АКЦИИ</a>
+            <a href="#rolls">Роллы</a>
+            <a href="#sets">Сеты</a>
+            <a href="#kombos">Комбо</a>
+            <a href="#fastfood">Фастфуд</a>
+            <a href="#pizzas">Пиццы</a>
+            <a href="#burgers">Бургеры</a>
+            <a href="#soups">Супы</a>
+            <a href="#drinks">Напитки</a>
+            <a href="#deserts">Десерты</a>
+        </nav>
+
+        <div id="goods">
+            <section class="section" id="actions">
+                <h2>Акции</h2>
+                <div>
+                    <div class="action-box">
+                        <img src="images/action.jfif" alt="Акция">
+                    </div>
+                </div>
+            </section>
+
+            <div id="filterControlPanel" class="filter-control-panel">
+                <div class="filter-group">
+                    <label>Категория:</label>
+                    <select id="categoryFilter">
+                        <option value="all">Все товары</option>
+                        <option value="rolls">Роллы</option>
+                        <option value="sets">Сеты</option>
+                        <option value="kombos">Комбо</option>
+                        <option value="fastfood">Фастфуд</option>
+                        <option value="pizzas">Пиццы</option>
+                        <option value="burgers">Бургеры</option>
+                        <option value="soups">Супы</option>
+                        <option value="drinks">Напитки</option>
+                        <option value="deserts">Десерты</option>
+                    </select>
+                </div>
+
+                <div class="sort-group">
+                    <label>Сортировка цен:</label>
+                    <select id="priceSort">
+                        <option value="default">По умолчанию</option>
+                        <option value="low-to-high">Сначала дешевые</option>
+                        <option value="high-to-low">Сначала дорогие</option>
+                    </select>
+                </div>
+            </div>
+            <section class="section" id="rolls">
+                <h2>Роллы</h2>
+                <div class="category"></div>
+            </section>
+
+            <section class="section" id="sets">
+                <h2>Сеты</h2>
+                <div class="category"></div>
+            </section>
+
+            <section class="section" id="kombos">
+                <h2>Комбо</h2>
+                <div class="category"></div>
+            </section>
+
+            <section class="section" id="fastfood">
+                <h2>Фастфуд</h2>
+                <div class="category"></div>
+            </section>
+
+            <section class="section" id="pizzas">
+                <h2>Пиццы</h2>
+                <div class="category"></div>
+            </section>
+
+            <section class="section" id="burgers">
+                <h2>Бургеры</h2>
+                <div class="category"></div>
+            </section>
+
+            <section class="section" id="soups">
+                <h2>Супы</h2>
+                <div class="category"></div>
+            </section>
+
+            <section class="section" id="drinks">
+                <h2>Напитки</h2>
+                <div class="category"></div>
+            </section>
+
+            <section class="section" id="deserts">
+                <h2 class="sectionName">Десерты</h2>
+                <div class="category"></div>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-left">
+                <span class="copyright">&copy; 2026 Магазин. Все права защищены.</span>
+            </div>
+            <div class="footer-center">
+                <a href="#about">О нас</a>
+                <a href="#delivery">Доставка</a>
+                <a href="#contacts">Контакты</a>
+            </div>
+            <div class="footer-right">
+                <a href="#tg" title="Telegram">TG</a>
+                <a href="#vk" title="VKontakte">VK</a>
+            </div>
+        </div>
+    </footer>
+
+    <button id="scrollToTopBtn" class="scroll-to-top-btn" title="Наверх">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    <div id="cartOverlay" class="cart-overlay"></div>
+
+    <aside id="cart" class="cart">
+        <div class="cart-header">
+            <h2>Корзина</h2>
+            <button id="closeCart" class="icon-btn">✕</button>
+        </div>
+        <div class="cart-body">
+            <p class="empty">Корзина пуста</p>
+        </div>
+        <div class="cart-footer">
+            <button class="primary-btn">Оформить заказ</button>
+        </div>
+    </aside>
+    <div id="authDropdown" class="auth-dropdown">
+        <button id="logoutBtn">Выйти из аккаунта</button>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <button id="closeModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-user"></i></div>
+            <h2 id="modalTitle">Вход</h2>
+            <form id="loginForm">
+                <div class="form-group" id="nameInputGroup" style="display: none; margin-bottom: 10px;">
+                    <input type="text" placeholder="Ваше имя" id="nameInput" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <input type="tel" placeholder="+7(7..." id="phoneInput" autocomplete="off">
+                </div>
+                <button type="submit" id="submitModalBtn">Войти</button>
+            </form>
+            <p id="toggleAuthMode"
+                style="font-size: 13px; cursor: pointer; color: var(--text-muted); margin-top: 10px; text-align: center;">
+                Нет аккаунта? Зарегистрироваться
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>
