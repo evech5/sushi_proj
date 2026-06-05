@@ -1,4 +1,3 @@
-
 let dataMapping = {};
 
 const categoryNamesRU = {
@@ -7,29 +6,24 @@ const categoryNamesRU = {
     soups: "Супы", drinks: "Напитки", deserts: "Десерты"
 };
 
-// Глобальный массив товаров в корзине
 let cartItems = [];
 
-// Функция динамического определения ключа localStorage для корзины текущего пользователя
 function getCartStorageKey() {
     const currentUser = localStorage.getItem("currentUser");
     if (currentUser) {
         const user = JSON.parse(currentUser);
-        return `ui_cart_items_${user.phone}`; // Корзина привязана к телефону
+        return `ui_cart_items_${user.phone}`;
     }
-    return "ui_cart_items_guest"; // Корзина для неавторизованных пользователей
+    return "ui_cart_items_guest";
 }
 
-// Функция для загрузки корзины из localStorage на основе текущего статуса пользователя
 function loadCartFromStorage() {
     const key = getCartStorageKey();
     cartItems = JSON.parse(localStorage.getItem(key)) || [];
 }
 
-// ЕДИНЫЙ ОБРАБОТЧИК ЗАГРУЗКИ СТРАНИЦЫ
 document.addEventListener("DOMContentLoaded", () => {
     
-    // СЕЛЕКТОРЫ ИНТЕРФЕЙСА И АВТОРИЗАЦИИ
     const loginBtn = document.querySelector("#logIn");
     const loginBtnSpan = loginBtn ? loginBtn.querySelector("span") : null;
     const loginBtnIcon = loginBtn ? loginBtn.querySelector("i") : null;
@@ -54,9 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
     let authMode = "login"; 
 
-    // ЛОГИКА РАБОТЫ КОРЗИНЫ
     function updateCartUI() {
-        // СОХРАНЯЕМ КОРЗИНУ В ПРАВИЛЬНЫЙ КЛЮЧ
         localStorage.setItem(getCartStorageKey(), JSON.stringify(cartItems));
 
         const cartBody = document.querySelector(".cart-body");
@@ -115,7 +107,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateCartUI();
     }
 
-    // ГЕНЕРАЦИЯ КАРТОЧЕК С ТОВАРАМИ
     function createCard(item) {
         const card = document.createElement("div");
         card.classList.add("item");
@@ -130,47 +121,60 @@ document.addEventListener("DOMContentLoaded", () => {
             <p class="price">${item.price}</p>
         `;
 
-        card.addEventListener("click", () => {
-            addItemToCart(item);
+        // Демонстрация работы маршрута с req.params:
+        // При клике сначала делаем запрос одного объекта по id, а затем добавляем его
+        card.addEventListener("click", async () => {
+            try {
+                const response = await fetch(`http://localhost:3000/api/products/${item.id}`);
+                if (response.ok) {
+                    const productData = await response.json();
+                    addItemToCart(productData);
+                } else {
+                    console.error("Ошибка 404: Товар не найден");
+                }
+            } catch (error) {
+                console.error("Сетевая ошибка при запросе товара", error);
+            }
         });
 
         return card;
     }
 
-    Object.keys(dataMapping).forEach(categoryKey => {
-        const container = document.querySelector(`#${categoryKey} .category`);
-        if (container) {
-            dataMapping[categoryKey].forEach(item => {
-                container.append(createCard(item));
-            });
-        }
-    });
-    
-    async function loadProducts() {
+    // Глобальная функция загрузки, чтобы ее мог вызывать filter.js
+    window.loadProducts = async function(queryString = "") {
         try {
-            const response = await fetch("http://localhost:3000/api/products");
-    
+            const response = await fetch(`http://localhost:3000/api/products${queryString}`);
             dataMapping = await response.json();
     
+            // Очищаем все контейнеры перед добавлением новых
+            document.querySelectorAll(".category").forEach(container => container.innerHTML = "");
+
             Object.keys(dataMapping).forEach(categoryKey => {
                 const container = document.querySelector(`#${categoryKey} .category`);
-    
                 if (container) {
-                    container.innerHTML = "";
-    
                     dataMapping[categoryKey].forEach(item => {
                         container.append(createCard(item));
                     });
+                }
+            });
+
+            // Скрываем пустые секции после фильтрации
+            document.querySelectorAll('.section').forEach(section => {
+                if (section.id === "actions") return;
+                const container = section.querySelector(".category");
+                if (container) {
+                    section.style.display = container.children.length === 0 ? "none" : "block";
                 }
             });
     
         } catch (error) {
             console.error("Ошибка загрузки товаров:", error);
         }
-    }
-    loadProducts();
+    };
+    
+    // Инициализируем загрузку при старте
+    window.loadProducts();
 
-    // УМНЫЙ ПОИСК С САДЖЕСТАМИ
     const searchInput = document.querySelector("#searchInput");
     const suggestionsContainer = document.querySelector("#searchSuggestions");
 
@@ -241,7 +245,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // МОБИЛЬНОЕ БУРГЕР МЕНЮ
     const burgerBtn = document.querySelector("#burgerMenuBtn");
     const categoriesNav = document.querySelector("#categories");
 
@@ -257,7 +260,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ЛОГИКА КНОПКИ «НАВЕРХ»
     const scrollToTopBtn = document.querySelector("#scrollToTopBtn");
 
     if (scrollToTopBtn) {
@@ -274,7 +276,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // СОХРАНЕНИЕ И ВОССТАНОВЛЕНИЕ ФИЛЬТРОВ ИНТЕРФЕЙСА
     if (categoryFilter) {
         const savedCategory = localStorage.getItem("ui_category_filter");
         if (savedCategory) {
@@ -297,7 +298,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // КОРЗИНА (ОТКРЫТИЕ / ЗАКРЫТИЕ)
     const basketBtn = document.querySelector("#basket");
     const cart = document.querySelector("#cart");
     const cartOverlay = document.querySelector("#cartOverlay");
@@ -319,7 +319,6 @@ document.addEventListener("DOMContentLoaded", () => {
         cartOverlay.addEventListener("click", closeCart);
     }
 
-    // ВАЛИДАЦИЯ И ОШИБКИ ВВОДАХ ТЕЛЕФОНА
     if (phoneInput) {
         phoneInput.addEventListener("input", (e) => {
             let matrix = "+7 (7__) ___-__-__",
@@ -369,14 +368,12 @@ document.addEventListener("DOMContentLoaded", () => {
         clearError(nameInput);
     }
 
-    // ПРОВЕРКА СТАТУСА АВТОРИЗАЦИИ
     function checkAuthStatus() {
         const currentUser = localStorage.getItem("currentUser");
         
         if (currentUser) {
             const user = JSON.parse(currentUser);
             
-            //меняет текст на имя пользователя
             if (loginBtnSpan) loginBtnSpan.textContent = user.name;
             
             if (loginBtnIcon) {
@@ -408,12 +405,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Обновляем данные в массиве и интерфейсе корзины под нового пользователя (или гостя)
         loadCartFromStorage();
         updateCartUI();
     }
 
-    // ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ МОДАЛКИ (ВХОД / РЕГИСТРАЦИЯ)
     if (toggleAuthMode) {
         toggleAuthMode.addEventListener("click", () => {
             clearAllErrors();
@@ -433,7 +428,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // КЛИК ПО КНОПКЕ "ВОЙТИ" / ХЕДЕР-АККАУНТУ
     if (loginBtn) {
         loginBtn.addEventListener("click", (e) => {
             const isLogged = loginBtn.getAttribute("data-logged") === "true";
@@ -451,22 +445,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // КНОПКА ВЫХОДА ИЗ АККАУНТА
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
             localStorage.removeItem("currentUser");
-            checkAuthStatus(); // Переключит корзину на 'ui_cart_items_guest' и очистит интерфейс
+            checkAuthStatus(); 
         });
     }
 
-    // ЗАКРЫТИЕ ДРОПДАУНА ПРИ КЛИКЕ В ЛЮБОЕ МЕСТО ЭКРАНА
     document.addEventListener("click", (e) => {
         if (authDropdown && !e.target.closest(".auth-wrapper")) {
             authDropdown.classList.remove("active");
         }
     });
 
-    // ЗАКРЫТИЕ МОДАЛКИ ПО КРЕСТИКУ И ОВЕРЛЕЮ
     if (closeModal) {
         closeModal.addEventListener("click", () => {
             if (modal) modal.classList.remove("active");
@@ -483,7 +474,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ОТПРАВКА ФОРМЫ АВТОРИЗАЦИИ
     if (loginForm) {
         loginForm.addEventListener("submit", (e) => {
             e.preventDefault();
@@ -526,14 +516,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 modal.classList.remove("active");
                 loginForm.reset();
-                checkAuthStatus(); // Автоматически подгрузит пустую или старую сохраненную корзину юзера
+                checkAuthStatus(); 
             } else {
                 const registeredUser = usersBase.find(u => u.phone === phoneValue);
                 if (registeredUser) {
                     localStorage.setItem("currentUser", JSON.stringify(registeredUser));
                     modal.classList.remove("active");
                     loginForm.reset();
-                    checkAuthStatus(); // Переключит на корзину вошедшего юзера
+                    checkAuthStatus(); 
                 } else {
                     alert("Пользователь не найден. Пройдите регистрацию.");
                 }
@@ -541,7 +531,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ДОПОЛНИТЕЛЬНОЕ ЗАКРЫТИЕ ВСЕГО ПО НАЖАТИЮ ESCAPE
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             if (modal) modal.classList.remove("active");
@@ -551,7 +540,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ПЕРВИЧНАЯ ПРОВЕРКА СТАТУСА ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
-    // (Внутри неё автоматически вызовутся loadCartFromStorage() и updateCartUI())
     checkAuthStatus();
 });
