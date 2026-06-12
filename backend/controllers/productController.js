@@ -1,121 +1,107 @@
-// Добавлены уникальные id каждому объекту
-const dataMapping = {
-    rolls: [
-        { id: "r1", title: "Филадельфия", desc: "Лосось, сливочный сыр, огурец", price: "1200 ₸", img: "images/fila.jpg" },
-        { id: "r2", title: "Калифорния", desc: "Краб, авокадо, огурец, икра", price: "1100 ₸", img: "images/kalifornia.jpg" },
-        { id: "r3", title: "Дракон", desc: "Угорь, авокадо, унаги соус", price: "1500 ₸", img: "images/drakon.jpg" },
-        { id: "r4", title: "Спайси тунец", desc: "Тунец, острый соус", price: "1300 ₸", img: "images/spicytuna.jpg" }
-    ],
-    sets: [
-        { id: "s1", title: "Сет №1", desc: "Разные роллы", price: "4500 ₸", img: "images/set1.jpeg" },
-        { id: "s2", title: "Сет №2", desc: "Фила + Калифорния", price: "5200 ₸", img: "images/set2.jpg" },
-        { id: "s3", title: "Сет №3", desc: "Острые роллы", price: "4800 ₸", img: "images/set3.webp" },
-        { id: "s4", title: "Сет №4", desc: "Большой микс", price: "6000 ₸", img: "images/set4.webp" }
-    ],
-    kombos: [
-        { id: "k1", title: "Комбо 1", desc: "Бургер, картофель фри, соус", price: "1800 ₸", img: "images/kombo1.jpg" },
-        { id: "k2", title: "Комбо 2", desc: "Наггетсы, картофель фри, кола", price: "1600 ₸", img: "images/kombo2.jpg" },
-        { id: "k3", title: "Комбо 3", desc: "Шаурма, картофель фри, напиток", price: "1700 ₸", img: "images/kombo3.jpeg" },
-        { id: "k4", title: "Комбо 4", desc: "Бургер, наггетсы, картофель фри, соус", price: "2000 ₸", img: "images/kombo4.webp" }
-    ],
-    fastfood: [
-        { id: "f1", title: "Чизбургер фри", desc: "Говядина, сыр чеддер, соус", price: "1500 ₸", img: "images/burger.jpg" },
-        { id: "f2", title: "Картофель фри", desc: "Хрустящий картофель, соль", price: "700 ₸", img: "images/fried.webp" },
-        { id: "f3", title: "Наггетсы", desc: "Куриное филе в панировке", price: "900 ₸", img: "images/naggets.jpg" },
-        { id: "f4", title: "Стрипсы", desc: "Курица в хрустящей панировке", price: "1100 ₸", img: "images/strips.jpg" }
-    ],
-    pizzas: [
-        { id: "p1", title: "Пепперони", desc: "Сыр, колбаса", price: "2500 ₸", img: "images/peperoni.jpg" },
-        { id: "p2", title: "Маргарита", desc: "Сыр, томаты", price: "2200 ₸", img: "images/margarita.jpg" },
-        { id: "p3", title: "4 сыра", desc: "Сырный микс", price: "2800 ₸", img: "images/cheese.png" },
-        { id: "p4", title: "Мясная", desc: "Говядина, курица", price: "3000 ₸", img: "images/meat.jpg" }
-    ],
-    burgers: [
-        { id: "b1", title: "Чизбургер", desc: "Говядина, сыр чеддер, огурцы, соус", price: "1400 ₸", img: "images/burger.jpg" },
-        { id: "b2", title: "Биг бургер", desc: "Двойная котлета, сыр, овощи", price: "1900 ₸", img: "images/big-burger.jpg" },
-        { id: "b3", title: "Чикенбургер", desc: "Куриное филе, салат, соус", price: "1300 ₸", img: "images/chikenb.jpeg" },
-        { id: "b4", title: "Острый бургер", desc: "Говядина, чили соус, сыр", price: "1500 ₸", img: "images/hot-burger.png" }
-    ],
-    soups: [
-        { id: "sp1", title: "Мисо суп", desc: "Паста мисо, тофу, вакаме", price: "900 ₸", img: "images/miso.jpg" },
-        { id: "sp2", title: "Рамен с курицей", desc: "Лапша, курица, яйцо", price: "1500 ₸", img: "images/ramen.jpg" },
-        { id: "sp3", title: "Рамен с говядиной", desc: "Говяжий бульон, лапша", price: "1700 ₸", img: "images/ramen-gov.jpg" },
-        { id: "sp4", title: "Удон суп", desc: "Толстая лапша, овощи", price: "1200 ₸", img: "images/udon.webp" }
-    ],
-    drinks: [
-        { id: "d1", title: "Coca-Cola", price: "500 ₸", img: "images/cola.jpeg" },
-        { id: "d2", title: "Апельсиновый сок", price: "600 ₸", img: "images/apelsin.jpg" },
-        { id: "d3", title: "Минеральная вода", price: "300 ₸", img: "images/mineral.jpg" },
-        { id: "d4", title: "Энергетик", price: "800 ₸", img: "images/gorila-mango.jpg" }
-    ],
-    deserts: [
-        { id: "ds1", title: "Чизкейк", desc: "Сливочный сыр, ваниль", price: "1200 ₸", img: "images/cheese-cake.jpg" },
-        { id: "ds2", title: "Тирамису", desc: "Кофейный бисквит, маскарпоне", price: "1300 ₸", img: "images/tiramisu.jpg" },
-        { id: "ds3", title: "Мороженое", desc: "Ванильное, сливки", price: "700 ₸", img: "images/ice-cream.webp" },
-        { id: "ds4", title: "Пончик", desc: "Шоколадная глазурь", price: "600 ₸", img: "images/donut.jpg" }
-    ]
-};
 
-// Получение списка с обработкой req.query (фильтрация, сортировка, лимит)
+const db = require('../database/db'); 
+
 const getProducts = (req, res) => {
     const { category, sort, limit } = req.query;
     
-    let allProducts = [];
-    for (const catKey in dataMapping) {
-        dataMapping[catKey].forEach(item => {
-            allProducts.push({ ...item, category: catKey });
-        });
-    }
+    // базовый SQL-запрос с объединением таблиц
+    let sql = `
+        SELECT p.id, p.name AS title, p.compound AS desc, p.price, p.image AS img, c.name AS category_name 
+        FROM products p
+        JOIN categories c ON p.category_id = c.id
+    `;
+    let params = [];
+    let whereClauses = [];
 
-    // Фильтрация по категории
+    // Фильтрация по категории на уровне базы данных
     if (category && category !== "all") {
-        allProducts = allProducts.filter(item => item.category === category);
+        whereClauses.push("c.name = ?");
+        params.push(category);
     }
 
-    // Сортировка по цене
+    if (whereClauses.length > 0) {
+        sql += " WHERE " + whereClauses.join(" AND ");
+    }
+
+    // Сортировка на уровне базы данных
     if (sort === "low-to-high") {
-        allProducts.sort((a, b) => parseInt(a.price.replace(/\D/g, '')) - parseInt(b.price.replace(/\D/g, '')));
+        sql += " ORDER BY p.price ASC";
     } else if (sort === "high-to-low") {
-        allProducts.sort((a, b) => parseInt(b.price.replace(/\D/g, '')) - parseInt(a.price.replace(/\D/g, '')));
+        sql += " ORDER BY p.price DESC";
     }
 
-    // Ограничение количества (limit)
+    //  Лимит на уровне базы данных
     if (limit) {
-        allProducts = allProducts.slice(0, parseInt(limit));
+        sql += " LIMIT ?";
+        params.push(parseInt(limit));
     }
 
-    // Восстанавливаем структуру по категориям для отправки на frontend
-    let groupedResult = {};
-    allProducts.forEach(item => {
-        if (!groupedResult[item.category]) {
-            groupedResult[item.category] = [];
+    // Выполняем собранный запрос к SQLite
+    db.all(sql, params, (err, rows) => {
+        if (err) {
+            console.error("Ошибка БД при получении товаров:", err);
+            return res.status(500).json({ error: "Ошибка базы данных" });
         }
-        const { category, ...itemData } = item;
-        groupedResult[item.category].push(itemData);
-    });
 
-    res.json(groupedResult);
+        let groupedResult = {};
+        
+        rows.forEach(item => {
+            const cat = item.category_name;
+            if (!groupedResult[cat]) {
+                groupedResult[cat] = [];
+            }
+            
+            const productData = {
+                id: String(item.id),      
+                title: item.title,
+                price: `${item.price} ₸`,  
+                img: item.img
+            };
+
+            if (item.desc) {
+                productData.desc = item.desc;
+            }
+
+            groupedResult[cat].push(productData);
+        });
+
+        res.json(groupedResult);
+    });
 };
 
-// Получение одного товара по ID с использованием req.params
+// Получение одного конкретного товара по ID с использованием req.params
 const getProductById = (req, res) => {
     const { id } = req.params;
-    let foundProduct = null;
 
-    for (const catKey in dataMapping) {
-        const product = dataMapping[catKey].find(item => item.id === id);
-        if (product) {
-            foundProduct = product;
-            break;
+    const sql = `
+        SELECT p.id, p.name AS title, p.compound AS desc, p.price, p.image AS img 
+        FROM products p
+        WHERE p.id = ?
+    `;
+
+    db.get(sql, [id], (err, row) => {
+        if (err) {
+            console.error("Ошибка БД при получении товара по ID:", err);
+            return res.status(500).json({ error: "Ошибка базы данных" });
         }
-    }
 
-    // Обработка ошибки 404
-    if (!foundProduct) {
-        return res.status(404).json({ error: "Товар не найден" });
-    }
+        if (!row) {
+            return res.status(404).json({ error: "Товар не найден" });
+        }
 
-    res.json(foundProduct);
+        const product = {
+            id: String(row.id),
+            title: row.title,
+            price: `${row.price} ₸`,
+            img: row.img
+        };
+
+        if (row.desc) {
+            product.desc = row.desc;
+        }
+
+        res.json(product);
+    });
 };
 
 module.exports = {

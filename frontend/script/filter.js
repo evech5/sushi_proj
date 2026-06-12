@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const queryString = params.toString() ? `?${params.toString()}` : "";
-        
+        console.log(queryString)
         // Вызываем функцию загрузки товаров из script.js с параметрами
         if (window.loadProducts) {
             window.loadProducts(queryString);
