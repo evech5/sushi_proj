@@ -1,21 +1,8 @@
-<<<<<<< HEAD
-
-const db = require('../database/db'); 
+const db = require('../database/db');
 
 const getProducts = (req, res) => {
     const { category, sort, limit } = req.query;
-    
-    // базовый SQL-запрос с объединением таблиц
-=======
-// Импортируем подключение к базе данных из нашего нового файла db.js
-const db = require('../database/db'); 
 
-// Получение списка товаров с обработкой req.query (фильтрация, сортировка, лимит)
-const getProducts = (req, res) => {
-    const { category, sort, limit } = req.query;
-    
-    // Пишем базовый SQL-запрос с объединением таблиц
->>>>>>> 27e19d73a3b4e3a3a1e31eb2dc4516c5cb0ddfcf
     let sql = `
         SELECT p.id, p.name AS title, p.compound AS desc, p.price, p.image AS img, c.name AS category_name 
         FROM products p
@@ -24,11 +11,6 @@ const getProducts = (req, res) => {
     let params = [];
     let whereClauses = [];
 
-<<<<<<< HEAD
-    // Фильтрация по категории на уровне базы данных
-=======
-    // 1. Фильтрация по категории на уровне базы данных
->>>>>>> 27e19d73a3b4e3a3a1e31eb2dc4516c5cb0ddfcf
     if (category && category !== "all") {
         whereClauses.push("c.name = ?");
         params.push(category);
@@ -38,63 +20,38 @@ const getProducts = (req, res) => {
         sql += " WHERE " + whereClauses.join(" AND ");
     }
 
-<<<<<<< HEAD
-    // Сортировка на уровне базы данных
-=======
-    // 2. Сортировка на уровне базы данных
->>>>>>> 27e19d73a3b4e3a3a1e31eb2dc4516c5cb0ddfcf
     if (sort === "low-to-high") {
         sql += " ORDER BY p.price ASC";
     } else if (sort === "high-to-low") {
         sql += " ORDER BY p.price DESC";
     }
 
-<<<<<<< HEAD
-    //  Лимит на уровне базы данных
-=======
-    // 3. Лимит на уровне базы данных
->>>>>>> 27e19d73a3b4e3a3a1e31eb2dc4516c5cb0ddfcf
     if (limit) {
         sql += " LIMIT ?";
         params.push(parseInt(limit));
     }
 
-    // Выполняем собранный запрос к SQLite
     db.all(sql, params, (err, rows) => {
         if (err) {
             console.error("Ошибка БД при получении товаров:", err);
             return res.status(500).json({ error: "Ошибка базы данных" });
         }
 
-<<<<<<< HEAD
-=======
-        // Группируем результат по категориям, чтобы вернуть точно такую же структуру, как раньше
->>>>>>> 27e19d73a3b4e3a3a1e31eb2dc4516c5cb0ddfcf
         let groupedResult = {};
-        
+
         rows.forEach(item => {
             const cat = item.category_name;
             if (!groupedResult[cat]) {
                 groupedResult[cat] = [];
             }
-            
+
             const productData = {
-<<<<<<< HEAD
-                id: String(item.id),      
+                id: String(item.id),
                 title: item.title,
-                price: `${item.price} ₸`,  
+                price: `${item.price} ₸`,
                 img: item.img
             };
 
-=======
-                id: String(item.id),       // Приводим к строке, чтобы фронтенд не заметил разницы со старыми ID (r1, f2)
-                title: item.title,
-                price: `${item.price} ₸`,  // Возвращаем знак тенге для фронтенда
-                img: item.img
-            };
-
-            // Добавляем описание только если оно заполнено (например, у напитков его может не быть)
->>>>>>> 27e19d73a3b4e3a3a1e31eb2dc4516c5cb0ddfcf
             if (item.desc) {
                 productData.desc = item.desc;
             }
@@ -106,7 +63,6 @@ const getProducts = (req, res) => {
     });
 };
 
-// Получение одного конкретного товара по ID с использованием req.params
 const getProductById = (req, res) => {
     const { id } = req.params;
 
@@ -141,7 +97,76 @@ const getProductById = (req, res) => {
     });
 };
 
+const createProduct = (req, res) => {
+    const { name, compound, price, image, category_id } = req.body;
+
+    if (!name || !price || !category_id) {
+        return res.status(400).json({ error: "Поля Название, Цена и Категория обязательны" });
+    }
+
+    const sql = `
+        INSERT INTO products (name, compound, price, image, category_id)
+        VALUES (?, ?, ?, ?, ?)
+    `;
+    const params = [name, compound || null, parseFloat(price), image || 'img/default.png', parseInt(category_id)];
+
+    db.run(sql, params, function (err) {
+        if (err) {
+            console.error("Ошибка БД при добавлении товара:", err);
+            return res.status(500).json({ error: "Ошибка базы данных" });
+        }
+        res.status(201).json({ message: "Товар успешно добавлен", productId: this.lastID });
+    });
+};
+
+const updateProduct = (req, res) => {
+    const { id } = req.params;
+    const { name, compound, price, image, category_id } = req.body;
+
+    if (!name || !price || !category_id) {
+        return res.status(400).json({ error: "Поля Название, Цена и Категория обязательны" });
+    }
+
+    const sql = `
+        UPDATE products 
+        SET name = ?, compound = ?, price = ?, image = ?, category_id = ?
+        WHERE id = ?
+    `;
+    const params = [name, compound || null, parseFloat(price), image || 'img/default.png', parseInt(category_id), id];
+
+    db.run(sql, params, function (err) {
+        if (err) {
+            console.error("Ошибка БД при обновлении товара:", err);
+            return res.status(500).json({ error: "Ошибка базы данных" });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: "Товар не найден" });
+        }
+        res.json({ message: "Товар успешно обновлен" });
+    });
+};
+
+const deleteProduct = (req, res) => {
+    const { id } = req.params;
+
+    const sql = `DELETE FROM products WHERE id = ?`;
+
+    db.run(sql, [id], function (err) {
+        if (err) {
+            console.error("Ошибка БД при удалении товара:", err);
+            return res.status(500).json({ error: "Ошибка базы данных" });
+        }
+        if (this.changes === 0) {
+            return res.status(404).json({ error: "Товар не найден" });
+        }
+        res.json({ message: "Товар успешно удален" });
+    });
+};
+
 module.exports = {
     getProducts,
-    getProductById
+    getProductById,
+    createProduct,
+    updateProduct,
+    deleteProduct
 };

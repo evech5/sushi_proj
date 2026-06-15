@@ -1,4 +1,10 @@
 let dataMapping = {};
+let isAdmin = false;
+
+const dbCategoryIds = {
+    rolls: 1, sets: 2, kombos: 3, fastfood: 4, 
+    pizzas: 5, burgers: 6, soups: 7, drinks: 8, deserts: 9
+};
 
 const categoryNamesRU = {
     rolls: "Роллы", sets: "Сеты", kombos: "Комбо",
@@ -112,7 +118,19 @@ document.addEventListener("DOMContentLoaded", () => {
         card.classList.add("item");
         card.setAttribute("data-title", item.title.toLowerCase());
 
+        // Если пользователь — админ, добавляем кнопку редактирования (шестеренку)
+        let adminBtnHTML = "";
+        if (isAdmin) {
+            // event.stopPropagation() предотвращает добавление товара в корзину при клике на шестеренку
+            adminBtnHTML = `
+                <button class="edit-item-btn" onclick="event.stopPropagation(); window.openAdminModal('edit', '${item.id}')">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            `;
+        }
+
         card.innerHTML = `
+            ${adminBtnHTML}
             <div class="img-box">
                 <img src="${item.img}" alt="${item.title}">
             </div>
@@ -121,8 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <p class="price">${item.price}</p>
         `;
 
-        // Демонстрация работы маршрута с req.params:
-        // При клике сначала делаем запрос одного объекта по id, а затем добавляем его
+        // При клике на карточку запрашиваем актуальные данные товара и добавляем в корзину
         card.addEventListener("click", async () => {
             try {
                 const response = await fetch(`http://localhost:3000/api/products/${item.id}`);
@@ -146,19 +163,32 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`http://localhost:3000/api/products${queryString}`);
             dataMapping = await response.json();
     
-            // Очищаем все контейнеры перед добавлением новых
             document.querySelectorAll(".category").forEach(container => container.innerHTML = "");
 
             Object.keys(dataMapping).forEach(categoryKey => {
                 const container = document.querySelector(`#${categoryKey} .category`);
                 if (container) {
+                    // Выводим все товары
                     dataMapping[categoryKey].forEach(item => {
                         container.append(createCard(item));
                     });
+
+                    // === ДОБАВЛЯЕМ КАРТОЧКУ С ПЛЮСИКОМ ДЛЯ АДМИНА ===
+                    if (isAdmin) {
+                        const addCard = document.createElement("div");
+                        addCard.classList.add("item", "add-item-card");
+                        addCard.innerHTML = `
+                            <i class="fa-solid fa-plus"></i>
+                            <p>Добавить товар</p>
+                        `;
+                        const catId = dbCategoryIds[categoryKey] || 1;
+                        // При клике открываем модалку в режиме 'add' и передаем ID категории
+                        addCard.onclick = () => window.openAdminModal('add', null, catId);
+                        container.append(addCard);
+                    }
                 }
             });
 
-            // Скрываем пустые секции после фильтрации
             document.querySelectorAll('.section').forEach(section => {
                 if (section.id === "actions") return;
                 const container = section.querySelector(".category");
@@ -371,10 +401,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function checkAuthStatus() {
         const currentUser = localStorage.getItem("currentUser");
         
+        // ВРЕМЕННО делаем всех админами или юзерами
+        /*isAdmin = false; */
+        
         if (currentUser) {
             const user = JSON.parse(currentUser);
             
-            if (loginBtnSpan) loginBtnSpan.textContent = user.name;
+            if (loginBtnSpan) loginBtnSpan.textContent = user.name + " (Админ)";
             
             if (loginBtnIcon) {
                 loginBtnIcon.className = "fa-solid fa-user";
@@ -392,7 +425,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 phoneDisplay.textContent = user.phone;
             }
         } else {
-            if (loginBtnSpan) loginBtnSpan.textContent = "Войти";
+            
+            if (loginBtnSpan) loginBtnSpan.textContent = "Войти"; 
             if (loginBtnIcon) {
                 loginBtnIcon.className = "fa-solid fa-user";
                 loginBtnIcon.style.display = "none";
@@ -407,6 +441,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         loadCartFromStorage();
         updateCartUI();
+        
+        if (window.loadProducts) window.loadProducts(); 
     }
 
     if (toggleAuthMode) {
@@ -475,7 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (loginForm) {
-        loginForm.addEventListener("submit", (e) => {
+        loginForm.addEventListener("submit", async (e) => { 
             e.preventDefault();
             
             let isValid = true;
@@ -483,6 +519,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const nameValue = nameInput ? nameInput.value.trim() : "";
             const digitsCount = phoneValue.replace(/\D/g, "").length;
 
+            // Валидация телефона
             if (phoneValue === "" || phoneValue === "+7 ") {
                 setError(phoneInput, "Поле 'Номер телефона' обязательно");
                 isValid = false;
@@ -493,6 +530,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 clearError(phoneInput);
             }
 
+            // Валидация имени
             if (authMode === "register" && nameValue === "") {
                 if (nameInput) setError(nameInput, "Введите имя");
                 isValid = false;
@@ -502,30 +540,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!isValid) return;
 
-            let usersBase = JSON.parse(localStorage.getItem("usersBase")) || [];
-
+            // РЕЖИМ РЕГИСТРАЦИИ 
             if (authMode === "register") {
-                if (usersBase.some(u => u.phone === phoneValue)) {
-                    alert("Этот номер телефона уже зарегистрирован.");
-                    return;
+                try {
+                    const response = await fetch("http://localhost:3000/api/register", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: nameValue, phone: phoneValue })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        alert(data.message); 
+                        
+                        const newUser = { name: nameValue, phone: phoneValue, status: 'user' };
+                        localStorage.setItem("currentUser", JSON.stringify(newUser));
+                        
+                        modal.classList.remove("active");
+                        loginForm.reset();
+                        checkAuthStatus(); 
+                    } else {
+                        alert("Ошибка регистрации: " + data.error);
+                    }
+                } catch (error) {
+                    console.error("Сетевая ошибка при регистрации:", error);
+                    alert("Не удалось связаться с сервером для регистрации.");
                 }
-                const newUser = { name: nameValue, phone: phoneValue };
-                usersBase.push(newUser);
-                localStorage.setItem("usersBase", JSON.stringify(usersBase));
-                localStorage.setItem("currentUser", JSON.stringify(newUser));
-                
-                modal.classList.remove("active");
-                loginForm.reset();
-                checkAuthStatus(); 
-            } else {
-                const registeredUser = usersBase.find(u => u.phone === phoneValue);
-                if (registeredUser) {
-                    localStorage.setItem("currentUser", JSON.stringify(registeredUser));
-                    modal.classList.remove("active");
-                    loginForm.reset();
-                    checkAuthStatus(); 
-                } else {
-                    alert("Пользователь не найден. Пройдите регистрацию.");
+            } 
+            //  РЕЖИМ ВХОДА 
+            else {
+                try {
+                    const response = await fetch("http://localhost:3000/api/logIn", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ phone: phoneValue })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                       
+                        localStorage.setItem("currentUser", JSON.stringify(data.user));
+                        
+                        modal.classList.remove("active");
+                        loginForm.reset();
+                        checkAuthStatus();
+                    } else {
+                        alert("Ошибка входа: " + data.error);
+                    }
+                } catch (error) {
+                    console.error("Сетевая ошибка при входе:", error);
+                    alert("Не удалось связаться с сервером для входа.");
                 }
             }
         });
@@ -541,4 +607,116 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     checkAuthStatus();
+    const adminModal = document.getElementById("adminModal");
+    const closeAdminModal = document.getElementById("closeAdminModal");
+    const adminFormInline = document.getElementById("adminFormInline");
+    
+    // Поля формы
+    const adminIdInput = document.getElementById("adminItemId");
+    const adminCatInput = document.getElementById("adminItemCategory");
+    const adminNameInput = document.getElementById("adminItemName");
+    const adminDescInput = document.getElementById("adminItemDesc");
+    const adminPriceInput = document.getElementById("adminItemPrice");
+    const adminImgInput = document.getElementById("adminItemImg");
+    
+    const adminModalTitle = document.getElementById("adminModalTitle");
+    const adminDeleteBtn = document.getElementById("adminDeleteBtnInline");
+
+    // Глобальная функция открытия модалки
+    window.openAdminModal = async function(mode, productId = null, categoryId = null) {
+        if (mode === 'add') {
+            adminModalTitle.textContent = "Добавить товар";
+            adminFormInline.reset();
+            adminIdInput.value = "";
+            adminCatInput.value = categoryId; 
+            adminImgInput.value = "images/default.jpg";
+            adminDeleteBtn.style.display = "none";
+        } else if (mode === 'edit') {
+            adminModalTitle.textContent = "Изменить товар";
+            adminDeleteBtn.style.display = "block";
+            
+            // Запрашиваем данные товара из API
+            try {
+                const res = await fetch(`http://localhost:3000/api/products/${productId}`);
+                const product = await res.json();
+                
+                adminIdInput.value = product.id;
+                adminCatInput.value = 1; 
+
+                adminNameInput.value = product.title;
+                adminDescInput.value = product.desc || "";
+                adminPriceInput.value = product.price.replace(/\D/g, ""); // Убираем ' ₸'
+                adminImgInput.value = product.img;
+            } catch(e) {
+                console.error("Ошибка загрузки товара", e);
+            }
+        }
+        
+        adminModal.classList.add("active");
+    };
+
+    // Закрытие модалки
+    if (closeAdminModal) {
+        closeAdminModal.addEventListener("click", () => {
+            adminModal.classList.remove("active");
+        });
+    }
+
+    // Сохранение (Создание или Обновление)
+    if (adminFormInline) {
+        adminFormInline.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const productId = adminIdInput.value;
+            const method = productId ? "PUT" : "POST";
+            const url = productId ? `http://localhost:3000/api/products/${productId}` : "http://localhost:3000/api/products";
+
+            const productData = {
+                name: adminNameInput.value,
+                compound: adminDescInput.value,
+                price: adminPriceInput.value,
+                image: adminImgInput.value,
+                category_id: adminCatInput.value || 1 // Берем из скрытого поля
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(productData)
+                });
+
+                if (response.ok) {
+                    adminModal.classList.remove("active");
+                    window.loadProducts(); // Перезагружаем витрину
+                } else {
+                    const err = await response.json();
+                    alert("Ошибка: " + err.error);
+                }
+            } catch (error) {
+                console.error("Ошибка сохранения:", error);
+            }
+        });
+    }
+
+    // Удаление товара
+    if (adminDeleteBtn) {
+        adminDeleteBtn.addEventListener("click", async () => {
+            const productId = adminIdInput.value;
+            if (!productId || !confirm("Точно удалить товар?")) return;
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
+                    method: "DELETE"
+                });
+
+                if (response.ok) {
+                    adminModal.classList.remove("active");
+                    window.loadProducts(); 
+                }
+            } catch (error) {
+                console.error("Ошибка удаления:", error);
+            }
+        });
+    }
 });

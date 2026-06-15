@@ -901,7 +901,67 @@ button {
     background-color: #fdf2f2;
     color: #c0392b;
 }
+/* Кнопка шестеренки на карточке товара */
+.edit-item-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--bg-dark);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 20;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
+}
 
+.edit-item-btn:hover {
+    background: var(--bg-dark);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Пустая карточка "Добавить товар" */
+.add-item-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 2px dashed #ccc;
+    color: #aaa;
+    box-shadow: none;
+    min-height: 230px;
+}
+
+.add-item-card::before {
+    display: none; /* Убираем черную заливку при наведении */
+}
+
+.add-item-card:hover {
+    border-color: var(--bg-dark);
+    color: var(--bg-dark);
+    background: white;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+}
+
+.add-item-card i {
+    font-size: 36px;
+    margin-bottom: 12px;
+}
+
+.add-item-card p {
+    font-weight: 700;
+    font-size: 15px;
+    margin: 0;
+}
 @media (max-width: 1199px) and (min-width: 769px) {
 
     header,

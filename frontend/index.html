@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="style/style.css">
     <script src="script/script.js" defer></script>
     <script src="script/filter.js" defer></script>
-    <!--<script src="script/auth.js" defer></script>-->
 </head>
 
 <body>
@@ -203,6 +202,37 @@
                 style="font-size: 13px; cursor: pointer; color: var(--text-muted); margin-top: 10px; text-align: center;">
                 Нет аккаунта? Зарегистрироваться
             </p>
+        </div>
+    </div>
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <button id="closeAdminModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-gear"></i></div>
+            <h2 id="adminModalTitle">Добавить товар</h2>
+
+            <form id="adminFormInline">
+                <input type="hidden" id="adminItemId">
+                <input type="hidden" id="adminItemCategory">
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="adminItemName" placeholder="Название товара" autocomplete="off" required>
+                </div>
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="adminItemDesc" placeholder="Состав/Описание (необязательно)"
+                        autocomplete="off">
+                </div>
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="number" id="adminItemPrice" placeholder="Цена (только цифры)" autocomplete="off"
+                        required>
+                </div>
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="adminItemImg" placeholder="Путь к фото (images/name.jpg)"
+                        value="images/default.jpg" autocomplete="off" required>
+                </div>
+
+                <button type="submit" id="adminSubmitBtnInline">Сохранить</button>
+                <button type="button" id="adminDeleteBtnInline"
+                    style="background: #ff3b30; margin-top: 5px; display: none;">Удалить товар</button>
+            </form>
         </div>
     </div>
 </body>

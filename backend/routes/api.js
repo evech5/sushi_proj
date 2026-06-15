@@ -1,12 +1,23 @@
 const express = require("express");
 const router = express.Router();
 
-const { getProducts, getProductById } = require("../controllers/productController");
+const {
+    getProducts,
+    getProductById,
+    createProduct,
+    updateProduct,
+    deleteProduct
+} = require("../controllers/productController");
 
-// Маршрут для списка объектов (обрабатывает query: ?category=...&sort=...&limit=...)
+const { register, logIn } = require("../controllers/authController");
+
 router.get("/products", getProducts);
-
-// Маршрут для получения одного объекта по параметру (req.params)
 router.get("/products/:id", getProductById);
+router.post("/products", createProduct);
+router.put("/products/:id", updateProduct);
+router.delete("/products/:id", deleteProduct);
+
+router.post("/register", register);
+router.post("/logIn", logIn)
 
 module.exports = router;
