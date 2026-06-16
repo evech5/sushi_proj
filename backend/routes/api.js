@@ -9,6 +9,8 @@ const {
     deleteProduct
 } = require("../controllers/productController");
 
+const { getCart, saveCart } = require("../controllers/cartController");
+
 const { register, logIn } = require("../controllers/authController");
 
 router.get("/products", getProducts);
@@ -19,5 +21,8 @@ router.delete("/products/:id", deleteProduct);
 
 router.post("/register", register);
 router.post("/logIn", logIn)
+
+router.get("/cart/:userId", getCart);
+router.post("/cart/:userId", saveCart);
 
 module.exports = router;

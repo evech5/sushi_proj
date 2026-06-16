@@ -2,7 +2,7 @@ let dataMapping = {};
 let isAdmin = false;
 
 const dbCategoryIds = {
-    rolls: 1, sets: 2, kombos: 3, fastfood: 4, 
+    rolls: 1, sets: 2, kombos: 3, fastfood: 4,
     pizzas: 5, burgers: 6, soups: 7, drinks: 8, deserts: 9
 };
 
@@ -29,7 +29,7 @@ function loadCartFromStorage() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    
+
     const loginBtn = document.querySelector("#logIn");
     const loginBtnSpan = loginBtn ? loginBtn.querySelector("span") : null;
     const loginBtnIcon = loginBtn ? loginBtn.querySelector("i") : null;
@@ -52,45 +52,60 @@ document.addEventListener("DOMContentLoaded", () => {
     const priceSort = document.querySelector("#priceSort");
 
     const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
-    let authMode = "login"; 
+    let authMode = "login";
 
-    function updateCartUI() {
+    function updateCartUI(skipPost = false) {
         localStorage.setItem(getCartStorageKey(), JSON.stringify(cartItems));
+
+        if (!skipPost) {
+            saveCartToDB();
+        }
 
         const cartBody = document.querySelector(".cart-body");
         const basketBtn = document.querySelector("#basket");
-        const basketText = basketBtn ? basketBtn.querySelector("span") : null; 
-        
+        const basketText = basketBtn ? basketBtn.querySelector("span") : null;
+
         if (cartItems.length === 0) {
             if (cartBody) cartBody.innerHTML = '<p class="empty">Корзина пуста</p>';
             if (basketText) basketText.textContent = "0 ₸";
             return;
         }
-        
+
         if (cartBody) cartBody.innerHTML = "";
         let totalSum = 0;
-        
+
         cartItems.forEach((item, index) => {
-            const numericPrice = parseInt(item.price.replace(/\s/g, ''));
+            // БЕЗОПАСНАЯ ПРОВЕРКА ЦЕНЫ (решает ошибку replace is not a function)
+            let numericPrice = 0;
+            let displayPrice = "";
+            
+            if (typeof item.price === 'string') {
+                numericPrice = parseInt(item.price.replace(/\D/g, ''));
+                displayPrice = item.price;
+            } else {
+                numericPrice = parseInt(item.price);
+                displayPrice = `${item.price} ₸`;
+            }
+
             const itemSum = numericPrice * item.quantity;
             totalSum += itemSum;
-            
+
             const itemEl = document.createElement("div");
             itemEl.classList.add("cart-item");
             itemEl.innerHTML = `
                 <div class="cart-item-info">
                     <span class="cart-item-title">${item.title}</span>
-                    <span class="cart-item-price">${item.price} x ${item.quantity}</span>
+                    <span class="cart-item-price">${displayPrice} x ${item.quantity}</span>
                 </div>
                 <button class="remove-item-btn" data-index="${index}">✕</button>
             `;
             if (cartBody) cartBody.appendChild(itemEl);
         });
-        
+
         if (basketText) {
             basketText.textContent = `${totalSum.toLocaleString()} ₸`;
         }
-        
+
         if (cartBody) {
             cartBody.querySelectorAll(".remove-item-btn").forEach(btn => {
                 btn.addEventListener("click", (e) => {
@@ -118,16 +133,17 @@ document.addEventListener("DOMContentLoaded", () => {
         card.classList.add("item");
         card.setAttribute("data-title", item.title.toLowerCase());
 
-        // Если пользователь — админ, добавляем кнопку редактирования (шестеренку)
         let adminBtnHTML = "";
         if (isAdmin) {
-            // event.stopPropagation() предотвращает добавление товара в корзину при клике на шестеренку
             adminBtnHTML = `
                 <button class="edit-item-btn" onclick="event.stopPropagation(); window.openAdminModal('edit', '${item.id}')">
                     <i class="fa-solid fa-gear"></i>
                 </button>
             `;
         }
+
+        // Защита отображения цены на карточке товара
+        const displayPriceCard = typeof item.price === 'string' ? item.price : `${item.price} ₸`;
 
         card.innerHTML = `
             ${adminBtnHTML}
@@ -136,44 +152,90 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <p class="title">${item.title}</p>
             ${item.desc ? `<p class="desc">${item.desc}</p>` : ""}
-            <p class="price">${item.price}</p>
+            <p class="price">${displayPriceCard}</p>
         `;
 
-        // При клике на карточку запрашиваем актуальные данные товара и добавляем в корзину
         card.addEventListener("click", async () => {
             try {
                 const response = await fetch(`http://localhost:3000/api/products/${item.id}`);
                 if (response.ok) {
                     const productData = await response.json();
                     addItemToCart(productData);
-                } else {
-                    console.error("Ошибка 404: Товар не найден");
                 }
-            } catch (error) {
-                console.error("Сетевая ошибка при запросе товара", error);
-            }
+            } catch (error) {}
         });
 
         return card;
     }
 
-    // Глобальная функция загрузки, чтобы ее мог вызывать filter.js
-    window.loadProducts = async function(queryString = "") {
+    async function loadCartFromDB() {
+        const currentUser = localStorage.getItem("currentUser");
+        if (!currentUser) {
+            loadCartFromStorage();
+            if (typeof updateCartUI === "function") updateCartUI(true);
+            return;
+        }
+
+        const user = JSON.parse(currentUser);
+
+        if (!user.id) {
+            if (typeof updateCartUI === "function") updateCartUI(true);
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/cart/${user.id}`);
+            if (response.ok) {
+                const dbCart = await response.json();
+                
+                if (cartItems.length > 0 && dbCart.length === 0) {
+                    await saveCartToDB();
+                } 
+                else if (dbCart.length > 0) {
+                    cartItems = dbCart;
+                }
+                
+                localStorage.setItem(`ui_cart_items_${user.phone}`, JSON.stringify(cartItems));
+            } else {
+                loadCartFromStorage();
+            }
+        } catch (error) {
+            loadCartFromStorage();
+        }
+
+        if (typeof updateCartUI === "function") updateCartUI(true);
+    }
+
+    async function saveCartToDB() {
+        const currentUser = localStorage.getItem("currentUser");
+        if (!currentUser) return;
+
+        const user = JSON.parse(currentUser);
+        const itemsToSend = cartItems.map(item => ({ id: item.id, quantity: item.quantity }));
+
+        try {
+            await fetch(`http://localhost:3000/api/cart/${user.id}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items: itemsToSend })
+            });
+        } catch (error) {}
+    }
+
+    window.loadProducts = async function (queryString = "") {
         try {
             const response = await fetch(`http://localhost:3000/api/products${queryString}`);
             dataMapping = await response.json();
-    
+
             document.querySelectorAll(".category").forEach(container => container.innerHTML = "");
 
             Object.keys(dataMapping).forEach(categoryKey => {
                 const container = document.querySelector(`#${categoryKey} .category`);
                 if (container) {
-                    // Выводим все товары
                     dataMapping[categoryKey].forEach(item => {
                         container.append(createCard(item));
                     });
 
-                    // === ДОБАВЛЯЕМ КАРТОЧКУ С ПЛЮСИКОМ ДЛЯ АДМИНА ===
                     if (isAdmin) {
                         const addCard = document.createElement("div");
                         addCard.classList.add("item", "add-item-card");
@@ -182,7 +244,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             <p>Добавить товар</p>
                         `;
                         const catId = dbCategoryIds[categoryKey] || 1;
-                        // При клике открываем модалку в режиме 'add' и передаем ID категории
                         addCard.onclick = () => window.openAdminModal('add', null, catId);
                         container.append(addCard);
                     }
@@ -196,13 +257,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     section.style.display = container.children.length === 0 ? "none" : "block";
                 }
             });
-    
-        } catch (error) {
-            console.error("Ошибка загрузки товаров:", error);
-        }
+
+        } catch (error) {}
     };
-    
-    // Инициализируем загрузку при старте
+
     window.loadProducts();
 
     const searchInput = document.querySelector("#searchInput");
@@ -229,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (matches.length > 0) {
                 suggestionsContainer.classList.add("active");
-                
+
                 matches.forEach(match => {
                     const div = document.createElement("div");
                     div.classList.add("suggestion-item");
@@ -244,22 +302,22 @@ document.addEventListener("DOMContentLoaded", () => {
                         searchInput.dispatchEvent(new Event('input'));
 
                         setTimeout(() => {
-                            let targetCard = document.querySelector(`#${match.category} [data-title="${match.title}"]`) || 
-                                             document.querySelector(`#${match.category} [data-title="${match.title.toLowerCase()}"]`);
-                            
+                            let targetCard = document.querySelector(`#${match.category} [data-title="${match.title}"]`) ||
+                                document.querySelector(`#${match.category} [data-title="${match.title.toLowerCase()}"]`);
+
                             if (targetCard) {
                                 targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 targetCard.style.outline = "3px solid #111111";
                                 targetCard.style.transform = "scale(1.04)";
                                 targetCard.style.zIndex = "10";
-                                
+
                                 setTimeout(() => {
                                     targetCard.style.outline = "none";
                                     targetCard.style.transform = "";
                                     targetCard.style.zIndex = "";
                                 }, 1500);
                             }
-                        }, 50); 
+                        }, 50);
                     });
                     suggestionsContainer.appendChild(div);
                 });
@@ -358,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (def.length >= val.length) val = def;
 
-            phoneInput.value = matrix.replace(/./g, function(a) {
+            phoneInput.value = matrix.replace(/./g, function (a) {
                 return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? "" : a;
             });
         });
@@ -375,7 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function setError(inputElement, errorMessage) {
         const parent = inputElement.parentElement;
         inputElement.classList.add("error-field");
-        
+
         let errorText = parent.querySelector(".error-message");
         if (!errorText) {
             errorText = document.createElement("span");
@@ -400,15 +458,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function checkAuthStatus() {
         const currentUser = localStorage.getItem("currentUser");
-        
-        // ВРЕМЕННО делаем всех админами или юзерами
-        /*isAdmin = false; */
-        
+
         if (currentUser) {
             const user = JSON.parse(currentUser);
-            
-            if (loginBtnSpan) loginBtnSpan.textContent = user.name + " (Админ)";
-            
+            isAdmin = user.status === "admin";
+            if (loginBtnSpan) loginBtnSpan.textContent = user.name;
+
             if (loginBtnIcon) {
                 loginBtnIcon.className = "fa-solid fa-user";
                 loginBtnIcon.style.display = "inline-block";
@@ -425,8 +480,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 phoneDisplay.textContent = user.phone;
             }
         } else {
-            
-            if (loginBtnSpan) loginBtnSpan.textContent = "Войти"; 
+            isAdmin = false;
+            if (loginBtnSpan) loginBtnSpan.textContent = "Войти";
             if (loginBtnIcon) {
                 loginBtnIcon.className = "fa-solid fa-user";
                 loginBtnIcon.style.display = "none";
@@ -439,10 +494,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        loadCartFromStorage();
-        updateCartUI();
-        
-        if (window.loadProducts) window.loadProducts(); 
+        loadCartFromDB();
+
+        if (window.loadProducts) window.loadProducts();
     }
 
     if (toggleAuthMode) {
@@ -468,7 +522,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loginBtn.addEventListener("click", (e) => {
             const isLogged = loginBtn.getAttribute("data-logged") === "true";
             if (isLogged) {
-                e.stopPropagation(); 
+                e.stopPropagation();
                 if (authDropdown) authDropdown.classList.toggle("active");
             } else {
                 authMode = "login";
@@ -484,7 +538,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
             localStorage.removeItem("currentUser");
-            checkAuthStatus(); 
+            checkAuthStatus();
         });
     }
 
@@ -511,15 +565,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (loginForm) {
-        loginForm.addEventListener("submit", async (e) => { 
+        loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            
+
             let isValid = true;
             const phoneValue = phoneInput.value.trim();
             const nameValue = nameInput ? nameInput.value.trim() : "";
             const digitsCount = phoneValue.replace(/\D/g, "").length;
 
-            // Валидация телефона
             if (phoneValue === "" || phoneValue === "+7 ") {
                 setError(phoneInput, "Поле 'Номер телефона' обязательно");
                 isValid = false;
@@ -530,7 +583,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 clearError(phoneInput);
             }
 
-            // Валидация имени
             if (authMode === "register" && nameValue === "") {
                 if (nameInput) setError(nameInput, "Введите имя");
                 isValid = false;
@@ -540,7 +592,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!isValid) return;
 
-            // РЕЖИМ РЕГИСТРАЦИИ 
             if (authMode === "register") {
                 try {
                     const response = await fetch("http://localhost:3000/api/register", {
@@ -552,23 +603,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     const data = await response.json();
 
                     if (response.ok) {
-                        alert(data.message); 
-                        
-                        const newUser = { name: nameValue, phone: phoneValue, status: 'user' };
+                        alert(data.message);
+
+                        const newUser = { id: data.userId, name: nameValue, phone: phoneValue, status: 'user' };
                         localStorage.setItem("currentUser", JSON.stringify(newUser));
-                        
+
                         modal.classList.remove("active");
                         loginForm.reset();
-                        checkAuthStatus(); 
+                        checkAuthStatus();
                     } else {
                         alert("Ошибка регистрации: " + data.error);
                     }
                 } catch (error) {
-                    console.error("Сетевая ошибка при регистрации:", error);
                     alert("Не удалось связаться с сервером для регистрации.");
                 }
-            } 
-            //  РЕЖИМ ВХОДА 
+            }
             else {
                 try {
                     const response = await fetch("http://localhost:3000/api/logIn", {
@@ -580,9 +629,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const data = await response.json();
 
                     if (response.ok) {
-                       
                         localStorage.setItem("currentUser", JSON.stringify(data.user));
-                        
+
                         modal.classList.remove("active");
                         loginForm.reset();
                         checkAuthStatus();
@@ -590,7 +638,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         alert("Ошибка входа: " + data.error);
                     }
                 } catch (error) {
-                    console.error("Сетевая ошибка при входе:", error);
                     alert("Не удалось связаться с сервером для входа.");
                 }
             }
@@ -607,62 +654,59 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     checkAuthStatus();
+    
     const adminModal = document.getElementById("adminModal");
     const closeAdminModal = document.getElementById("closeAdminModal");
     const adminFormInline = document.getElementById("adminFormInline");
-    
-    // Поля формы
+
     const adminIdInput = document.getElementById("adminItemId");
     const adminCatInput = document.getElementById("adminItemCategory");
     const adminNameInput = document.getElementById("adminItemName");
     const adminDescInput = document.getElementById("adminItemDesc");
     const adminPriceInput = document.getElementById("adminItemPrice");
     const adminImgInput = document.getElementById("adminItemImg");
-    
+
     const adminModalTitle = document.getElementById("adminModalTitle");
     const adminDeleteBtn = document.getElementById("adminDeleteBtnInline");
 
-    // Глобальная функция открытия модалки
-    window.openAdminModal = async function(mode, productId = null, categoryId = null) {
+    window.openAdminModal = async function (mode, productId = null, categoryId = null) {
         if (mode === 'add') {
             adminModalTitle.textContent = "Добавить товар";
             adminFormInline.reset();
             adminIdInput.value = "";
-            adminCatInput.value = categoryId; 
+            adminCatInput.value = categoryId;
             adminImgInput.value = "images/default.jpg";
             adminDeleteBtn.style.display = "none";
         } else if (mode === 'edit') {
             adminModalTitle.textContent = "Изменить товар";
             adminDeleteBtn.style.display = "block";
-            
-            // Запрашиваем данные товара из API
+
             try {
                 const res = await fetch(`http://localhost:3000/api/products/${productId}`);
                 const product = await res.json();
-                
+
                 adminIdInput.value = product.id;
-                adminCatInput.value = 1; 
+                adminCatInput.value = 1;
 
                 adminNameInput.value = product.title;
                 adminDescInput.value = product.desc || "";
-                adminPriceInput.value = product.price.replace(/\D/g, ""); // Убираем ' ₸'
+                
+                // БЕЗОПАСНАЯ ПРОВЕРКА ЦЕНЫ ДЛЯ АДМИНКИ (чтобы не падало при редактировании)
+                adminPriceInput.value = typeof product.price === 'string' ? product.price.replace(/\D/g, "") : product.price;
+                
                 adminImgInput.value = product.img;
-            } catch(e) {
-                console.error("Ошибка загрузки товара", e);
-            }
+            } catch (e) {}
         }
-        
+
         adminModal.classList.add("active");
     };
 
-    // Закрытие модалки
     if (closeAdminModal) {
         closeAdminModal.addEventListener("click", () => {
             adminModal.classList.remove("active");
         });
     }
 
-    // Сохранение (Создание или Обновление)
     if (adminFormInline) {
         adminFormInline.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -676,7 +720,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 compound: adminDescInput.value,
                 price: adminPriceInput.value,
                 image: adminImgInput.value,
-                category_id: adminCatInput.value || 1 // Берем из скрытого поля
+                category_id: adminCatInput.value || 1
             };
 
             try {
@@ -688,18 +732,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok) {
                     adminModal.classList.remove("active");
-                    window.loadProducts(); // Перезагружаем витрину
+                    window.loadProducts();
                 } else {
                     const err = await response.json();
                     alert("Ошибка: " + err.error);
                 }
-            } catch (error) {
-                console.error("Ошибка сохранения:", error);
-            }
+            } catch (error) {}
         });
     }
 
-    // Удаление товара
     if (adminDeleteBtn) {
         adminDeleteBtn.addEventListener("click", async () => {
             const productId = adminIdInput.value;
@@ -712,11 +753,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok) {
                     adminModal.classList.remove("active");
-                    window.loadProducts(); 
+                    window.loadProducts();
                 }
-            } catch (error) {
-                console.error("Ошибка удаления:", error);
-            }
+            } catch (error) {}
         });
     }
 });
