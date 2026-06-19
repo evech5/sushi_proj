@@ -11,7 +11,8 @@ html {
     --bg-main: #fcfcfc;
     --bg-dark: #111111;
     --bg-grey: #efeef1;
-    --text-muted: #8e8e93;
+    --text-muted: #707074;
+    --text-muted-dark: #404042;
 }
 
 body {
@@ -1146,7 +1147,6 @@ button {
         font-size: 13px;
     }
 }
-
 @media (max-width: 576px) {
     header {
         grid-template-columns: 45% 20% 35%;

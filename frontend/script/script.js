@@ -29,7 +29,6 @@ function loadCartFromStorage() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-
     const loginBtn = document.querySelector("#logIn");
     const loginBtnSpan = loginBtn ? loginBtn.querySelector("span") : null;
     const loginBtnIcon = loginBtn ? loginBtn.querySelector("i") : null;
@@ -75,7 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
         let totalSum = 0;
 
         cartItems.forEach((item, index) => {
-            // БЕЗОПАСНАЯ ПРОВЕРКА ЦЕНЫ (решает ошибку replace is not a function)
             let numericPrice = 0;
             let displayPrice = "";
             
@@ -142,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         }
 
-        // Защита отображения цены на карточке товара
         const displayPriceCard = typeof item.price === 'string' ? item.price : `${item.price} ₸`;
 
         card.innerHTML = `
@@ -691,7 +688,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 adminNameInput.value = product.title;
                 adminDescInput.value = product.desc || "";
                 
-                // БЕЗОПАСНАЯ ПРОВЕРКА ЦЕНЫ ДЛЯ АДМИНКИ (чтобы не падало при редактировании)
                 adminPriceInput.value = typeof product.price === 'string' ? product.price.replace(/\D/g, "") : product.price;
                 
                 adminImgInput.value = product.img;
@@ -723,10 +719,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 category_id: adminCatInput.value || 1
             };
 
+            const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+            const headers = { "Content-Type": "application/json" };
+            if (currentUser.id) {
+                headers["x-user-id"] = currentUser.id;
+            }
+
             try {
                 const response = await fetch(url, {
                     method: method,
-                    headers: { "Content-Type": "application/json" },
+                    headers: headers,
                     body: JSON.stringify(productData)
                 });
 
@@ -746,14 +748,24 @@ document.addEventListener("DOMContentLoaded", () => {
             const productId = adminIdInput.value;
             if (!productId || !confirm("Точно удалить товар?")) return;
 
+            const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+            const headers = {};
+            if (currentUser.id) {
+                headers["x-user-id"] = currentUser.id;
+            }
+
             try {
                 const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
-                    method: "DELETE"
+                    method: "DELETE",
+                    headers: headers
                 });
 
                 if (response.ok) {
                     adminModal.classList.remove("active");
                     window.loadProducts();
+                } else {
+                    const err = await response.json();
+                    alert("Ошибка: " + err.error);
                 }
             } catch (error) {}
         });
