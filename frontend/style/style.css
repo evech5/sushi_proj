@@ -255,51 +255,43 @@ section {
     scroll-margin-top: 100px;
 }
 
-/* 1. Обновляем базовый класс карточки */
 .item {
     display: flex;
     flex-direction: column;
     height: 100%;
     border-radius: var(--border-radius);
-    /* Добавляем relative, чтобы псевдоэлемент позиционировался внутри карточки */
-    position: relative; 
-    /* Обрезаем фон, чтобы он не выходил за скругленные углы */
-    overflow: hidden; 
-    
+    position: relative;
+    overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     background-color: white;
     padding-bottom: 15px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     box-sizing: border-box;
     cursor: pointer;
-    z-index: 1; /* Чтобы содержимое было поверх фона */
+    z-index: 1;
 }
 
-/* 2. Создаем фоновый слой */
 .item::before {
     content: '';
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 0%; /* Изначально высота 0 */
+    height: 0%;
     background-color: var(--bg-dark);
     transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: -1; /* Фон позади текста */
+    z-index: -1;
 }
 
-/* 3. Эффект при наведении */
 .item:hover::before {
-    height: 100%; /* При наведении заполняет всю карточку */
+    height: 100%;
 }
 
 .item:hover {
     transform: translateY(-4px);
-    
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* 4. Плавное изменение цвета текста */
 .item:hover .title,
 .item:hover .desc,
 .item:hover .price {
@@ -307,7 +299,6 @@ section {
     transition: color 0.5s ease;
 }
 
-/* Дополнительно: чтобы картинка не конфликтовала с фоном */
 .item:hover .img-box {
     opacity: 0.9;
 }
@@ -674,6 +665,7 @@ footer {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex: 1;
 }
 
 .cart-item-title {
@@ -688,20 +680,38 @@ footer {
     font-weight: 500;
 }
 
-.remove-item-btn {
-    background: none;
-    border: none;
-    color: #ff3b30;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: bold;
-    padding: 5px 8px;
-    border-radius: 6px;
-    transition: background-color 0.2s ease;
+.cart-item-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e5ea;
 }
 
-.remove-item-btn:hover {
-    background-color: rgba(255, 59, 48, 0.1);
+.cart-control-btn {
+    border: none;
+    background: none;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--bg-dark);
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-control-btn:hover {
+    color: #545456;
+}
+
+.cart-item-quantity {
+    font-size: 14px;
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
 }
 
 .cart-footer {
@@ -812,7 +822,6 @@ button {
     font-weight: 500;
 }
 
-/* Обертка для правильного позиционирования */
 .auth-wrapper {
     position: relative;
     display: inline-block;
@@ -822,38 +831,33 @@ button {
     cursor: pointer;
 }
 
-/* Стилизация выпадающего меню */
-#authDropdown {
+.auth-dropdown {
     position: absolute;
     top: calc(100% + 15px);
     right: 0;
-    min-width: 220px;
+    min-width: 240px;
     background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
     border: 1px solid #f0f0f0;
-    padding: 8px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 10px;
     z-index: 2000;
-    
-    /* Скрыто по умолчанию */
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
 }
 
-/* При добавлении класса .active меню плавно появляется */
-#authDropdown.active {
+.auth-dropdown.active {
     opacity: 1 !important;
     visibility: visible !important;
     transform: translateY(0) !important;
 }
 
-/* Треугольник сверху меню */
-#authDropdown::before {
+.auth-dropdown::before {
     content: '';
     position: absolute;
     top: -6px;
@@ -867,20 +871,53 @@ button {
     border-radius: 2px 0 0 0;
 }
 
-/* Оформление номера телефона */
+.address-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-bottom: 1px solid #edf2f7;
+    padding-bottom: 10px;
+}
+
+.address-section label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted-dark);
+}
+
+.address-section input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.address-section input:focus {
+    border-color: black;
+}
+
+.address-section button {
+    width: 100% !important;
+    padding: 8px !important;
+    background: black !important;
+    color: white !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+
 .user-phone-info {
     font-size: 14px;
     font-weight: 600;
     color: #2c3e50;
-    padding: 12px 14px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
+    padding: 8px 0;
     text-align: center;
-    border: 1px solid #edf2f7;
     user-select: none;
 }
 
-/* Кнопка "Выйти" */
 #logoutBtn {
     width: 100%;
     background-color: transparent;
@@ -902,7 +939,7 @@ button {
     background-color: #fdf2f2;
     color: #c0392b;
 }
-/* Кнопка шестеренки на карточке товара */
+
 .edit-item-btn {
     position: absolute;
     top: 10px;
@@ -918,7 +955,7 @@ button {
     justify-content: center;
     cursor: pointer;
     z-index: 20;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: all 0.2s ease;
 }
 
@@ -928,7 +965,6 @@ button {
     transform: scale(1.1);
 }
 
-/* Пустая карточка "Добавить товар" */
 .add-item-card {
     display: flex;
     flex-direction: column;
@@ -942,7 +978,7 @@ button {
 }
 
 .add-item-card::before {
-    display: none; /* Убираем черную заливку при наведении */
+    display: none;
 }
 
 .add-item-card:hover {
@@ -963,6 +999,7 @@ button {
     font-size: 15px;
     margin: 0;
 }
+
 @media (max-width: 1199px) and (min-width: 769px) {
 
     header,
@@ -1147,6 +1184,7 @@ button {
         font-size: 13px;
     }
 }
+
 @media (max-width: 576px) {
     header {
         grid-template-columns: 45% 20% 35%;

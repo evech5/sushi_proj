@@ -46,6 +46,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const authDropdown = document.querySelector("#authDropdown");
     const logoutBtn = document.querySelector("#logoutBtn");
+    const userAddressInput = document.querySelector("#userAddressInput");
+    const saveAddressBtn = document.querySelector("#saveAddressBtn");
+
+    const checkoutModal = document.querySelector("#checkoutModal");
+    const closeCheckoutModal = document.querySelector("#closeCheckoutModal");
+    const checkoutForm = document.querySelector("#checkoutForm");
+    const checkoutAddressInput = document.querySelector("#checkoutAddressInput");
+    const checkoutTotalSum = document.querySelector("#checkoutTotalSum");
 
     const categoryFilter = document.querySelector("#categoryFilter");
     const priceSort = document.querySelector("#priceSort");
@@ -93,9 +101,13 @@ document.addEventListener("DOMContentLoaded", () => {
             itemEl.innerHTML = `
                 <div class="cart-item-info">
                     <span class="cart-item-title">${item.title}</span>
-                    <span class="cart-item-price">${displayPrice} x ${item.quantity}</span>
+                    <span class="cart-item-price">${displayPrice}</span>
                 </div>
-                <button class="remove-item-btn" data-index="${index}">✕</button>
+                <div class="cart-item-controls">
+                    <button class="cart-control-btn minus-btn" data-index="${index}">-</button>
+                    <span class="cart-item-quantity">${item.quantity}</span>
+                    <button class="cart-control-btn plus-btn" data-index="${index}">+</button>
+                </div>
             `;
             if (cartBody) cartBody.appendChild(itemEl);
         });
@@ -105,11 +117,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (cartBody) {
-            cartBody.querySelectorAll(".remove-item-btn").forEach(btn => {
+            cartBody.querySelectorAll(".minus-btn").forEach(btn => {
                 btn.addEventListener("click", (e) => {
                     e.stopPropagation();
                     const idx = parseInt(btn.getAttribute("data-index"));
-                    cartItems.splice(idx, 1);
+                    if (cartItems[idx].quantity > 1) {
+                        cartItems[idx].quantity -= 1;
+                    } else {
+                        cartItems.splice(idx, 1);
+                    }
+                    updateCartUI();
+                });
+            });
+
+            cartBody.querySelectorAll(".plus-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.getAttribute("data-index"));
+                    cartItems[idx].quantity += 1;
                     updateCartUI();
                 });
             });
@@ -472,9 +497,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!phoneDisplay) {
                     phoneDisplay = document.createElement("div");
                     phoneDisplay.className = "user-phone-info";
-                    authDropdown.insertBefore(phoneDisplay, authDropdown.firstChild);
+                    authDropdown.insertBefore(phoneDisplay, authDropdown.querySelector(".address-section"));
                 }
                 phoneDisplay.textContent = user.phone;
+            }
+
+            if (userAddressInput) {
+                userAddressInput.value = user.address || "";
             }
         } else {
             isAdmin = false;
@@ -489,11 +518,118 @@ document.addEventListener("DOMContentLoaded", () => {
                 const phoneDisplay = authDropdown.querySelector(".user-phone-info");
                 if (phoneDisplay) phoneDisplay.remove();
             }
+            if (userAddressInput) {
+                userAddressInput.value = "";
+            }
         }
 
         loadCartFromDB();
 
         if (window.loadProducts) window.loadProducts();
+    }
+
+    if (saveAddressBtn && userAddressInput) {
+        saveAddressBtn.addEventListener("click", () => {
+            const currentUser = localStorage.getItem("currentUser");
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                user.address = userAddressInput.value.trim();
+                localStorage.setItem("currentUser", JSON.stringify(user));
+                alert("Адрес успешно сохранен!");
+            }
+        });
+    }
+
+    const cartOrderBtn = document.querySelector(".cart-footer .primary-btn");
+    if (cartOrderBtn) {
+        cartOrderBtn.addEventListener("click", () => {
+            const currentUser = localStorage.getItem("currentUser");
+            if (!currentUser) {
+                if (cart) cart.classList.remove("active");
+                if (cartOverlay) cartOverlay.classList.remove("active");
+                authMode = "login";
+                modalTitle.textContent = "Вход";
+                if (nameInputGroup) nameInputGroup.style.display = "none";
+                submitModalBtn.textContent = "Войти";
+                if (modal) modal.classList.add("active");
+                return;
+            }
+
+            if (cartItems.length === 0) {
+                alert("Ваша корзина пуста.");
+                return;
+            }
+
+            const user = JSON.parse(currentUser);
+            if (checkoutAddressInput) {
+                checkoutAddressInput.value = user.address || "";
+            }
+
+            if (checkoutTotalSum) {
+                let total = 0;
+                cartItems.forEach(item => {
+                    let price = typeof item.price === 'string' ? parseInt(item.price.replace(/\D/g, '')) : parseInt(item.price);
+                    total += price * item.quantity;
+                });
+                checkoutTotalSum.textContent = `${total.toLocaleString()} ₸`;
+            }
+
+            if (cart) cart.classList.remove("active");
+            if (cartOverlay) cartOverlay.classList.remove("active");
+            if (checkoutModal) checkoutModal.classList.add("active");
+        });
+    }
+
+    if (closeCheckoutModal) {
+        closeCheckoutModal.addEventListener("click", () => {
+            if (checkoutModal) checkoutModal.classList.remove("active");
+        });
+    }
+
+    if (checkoutForm) {
+        checkoutForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const currentUser = localStorage.getItem("currentUser");
+            if (!currentUser) return;
+
+            const user = JSON.parse(currentUser);
+            const addressValue = checkoutAddressInput.value.trim();
+
+            if (!addressValue) {
+                alert("Пожалуйста, укажите адрес доставки.");
+                return;
+            }
+
+            user.address = addressValue;
+            localStorage.setItem("currentUser", JSON.stringify(user));
+            if (userAddressInput) userAddressInput.value = addressValue;
+
+            const orderData = {
+                userId: user.id,
+                address: addressValue,
+                items: cartItems.map(item => ({ id: item.id, quantity: item.quantity }))
+            };
+
+            try {
+                const response = await fetch("http://localhost:3000/api/orders", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(orderData)
+                });
+
+                if (response.ok) {
+                    alert("Заказ успешно оформлен!");
+                    cartItems = [];
+                    updateCartUI();
+                    if (checkoutModal) checkoutModal.classList.remove("active");
+                } else {
+                    const err = await response.json();
+                    alert("Ошибка при оформлении заказа: " + (err.error || "Попробуйте позже"));
+                }
+            } catch (error) {
+                alert("Ошибка соединения с сервером при оформлении заказа.");
+            }
+        });
     }
 
     if (toggleAuthMode) {
@@ -602,7 +738,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (response.ok) {
                         alert(data.message);
 
-                        const newUser = { id: data.userId, name: nameValue, phone: phoneValue, status: 'user' };
+                        const newUser = { id: data.userId, name: nameValue, phone: phoneValue, status: 'user', address: '' };
                         localStorage.setItem("currentUser", JSON.stringify(newUser));
 
                         modal.classList.remove("active");
@@ -645,7 +781,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "Escape") {
             if (modal) modal.classList.remove("active");
             clearAllErrors();
-            if (typeof closeCart === "function") closeCart();
+            if (cart) cart.classList.remove("active");
+            if (cartOverlay) cartOverlay.classList.remove("active");
+            if (checkoutModal) checkoutModal.classList.remove("active");
             if (suggestionsContainer) suggestionsContainer.classList.remove("active");
         }
     });

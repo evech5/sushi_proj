@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SUSHKA Суши Доставка</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&display=swap" rel="stylesheet">
@@ -16,31 +15,31 @@
 </head>
 
 <body>
-
     <header id="header">
         <img src="images/logo.png" id="logoMock" alt="Логотип">
         <div id="leftButtons">
             <button id="burgerMenuBtn"><i class="fa-solid fa-bars"></i></button>
-
             <div id="searchContainer">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
                 <input id="searchInput" type="text" placeholder="Поиск" autocomplete="off">
                 <div id="searchSuggestions" class="search-suggestions"></div>
             </div>
         </div>
-
         <div id="rightButtons">
             <div class="auth-wrapper" style="position: relative; display: flex;">
                 <button id="logIn" data-logged="false">
                     <span>Войти</span>
                     <i class="fa-solid fa-user"></i>
                 </button>
-
                 <div id="authDropdown" class="auth-dropdown">
+                    <div class="address-section">
+                        <label for="userAddressInput">Адрес доставки:</label>
+                        <input type="text" id="userAddressInput" placeholder="Укажите ваш адрес" autocomplete="off">
+                        <button id="saveAddressBtn">Сохранить адрес</button>
+                    </div>
                     <button id="logoutBtn">Выйти</button>
                 </div>
             </div>
-
             <button id="basket">
                 <i class="fa-solid fa-basket-shopping"></i>
                 <span>0 ₸</span>
@@ -98,6 +97,7 @@
                     </select>
                 </div>
             </div>
+
             <section class="section" id="rolls">
                 <h2>Роллы</h2>
                 <div class="category"></div>
@@ -180,9 +180,6 @@
             <button class="primary-btn">Оформить заказ</button>
         </div>
     </aside>
-    <div id="authDropdown" class="auth-dropdown">
-        <button id="logoutBtn">Выйти из аккаунта</button>
-    </div>
 
     <div id="modal" class="modal">
         <div class="modal-content">
@@ -198,18 +195,17 @@
                 </div>
                 <button type="submit" id="submitModalBtn">Войти</button>
             </form>
-            <p id="toggleAuthMode"
-                style="font-size: 13px; cursor: pointer; color: var(--text-muted-dark); margin-top: 10px; text-align: center;">
+            <p id="toggleAuthMode" style="font-size: 13px; cursor: pointer; color: var(--text-muted-dark); margin-top: 10px; text-align: center;">
                 Нет аккаунта? Зарегистрироваться
             </p>
         </div>
     </div>
+
     <div id="adminModal" class="modal">
         <div class="modal-content">
             <button id="closeAdminModal" type="button" class="icon-btn close-modal-btn">✕</button>
             <div class="modal-icon"><i class="fa-solid fa-gear"></i></div>
             <h2 id="adminModalTitle">Добавить товар</h2>
-
             <form id="adminFormInline">
                 <input type="hidden" id="adminItemId">
                 <input type="hidden" id="adminItemCategory">
@@ -217,21 +213,33 @@
                     <input type="text" id="adminItemName" placeholder="Название товара" autocomplete="off" required>
                 </div>
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="text" id="adminItemDesc" placeholder="Состав/Описание (необязательно)"
-                        autocomplete="off">
+                    <input type="text" id="adminItemDesc" placeholder="Состав/Описание (необязательно)" autocomplete="off">
                 </div>
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="number" id="adminItemPrice" placeholder="Цена (только цифры)" autocomplete="off"
-                        required>
+                    <input type="number" id="adminItemPrice" placeholder="Цена (только цифры)" autocomplete="off" required>
                 </div>
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="text" id="adminItemImg" placeholder="Путь к фото (images/name.jpg)"
-                        value="images/default.jpg" autocomplete="off" required>
+                    <input type="text" id="adminItemImg" placeholder="Путь к фото (images/name.jpg)" value="images/default.jpg" autocomplete="off" required>
                 </div>
-
                 <button type="submit" id="adminSubmitBtnInline">Сохранить</button>
-                <button type="button" id="adminDeleteBtnInline"
-                    style="background: #ff3b30; margin-top: 5px; display: none;">Удалить товар</button>
+                <button type="button" id="adminDeleteBtnInline" style="background: #ff3b30; margin-top: 5px; display: none;">Удалить товар</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content">
+            <button id="closeCheckoutModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-truck-fast"></i></div>
+            <h2>Оформление заказа</h2>
+            <form id="checkoutForm">
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="checkoutAddressInput" placeholder="Адрес доставки" autocomplete="off" required>
+                </div>
+                <div style="font-size: 15px; margin: 10px 0; width: 100%; text-align: left; font-weight: 600;">
+                    Итого к оплате: <span id="checkoutTotalSum">0 ₸</span>
+                </div>
+                <button type="submit">Подтвердить заказ</button>
             </form>
         </div>
     </div>

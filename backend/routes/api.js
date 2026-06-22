@@ -11,6 +11,7 @@ const {
 
 const { getCart, saveCart } = require("../controllers/cartController");
 const { register, logIn } = require("../controllers/authController");
+const { createOrder } = require("../controllers/orderController");
 const { checkAdmin } = require("../middleware/roleMiddleware");
 
 router.get("/products", getProducts);
@@ -22,9 +23,9 @@ router.post("/logIn", logIn);
 router.get("/cart/:userId", getCart);
 router.post("/cart/:userId", saveCart);
 
+router.post("/orders", createOrder);
 
 router.use("/products", checkAdmin);
-
 
 router.post("/products", createProduct);
 router.put("/products/:id", updateProduct);
