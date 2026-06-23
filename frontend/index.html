@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 
@@ -10,10 +11,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/fe6925ae5e.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style/style.css">
-    
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    
+
     <script src="script/script.js" defer></script>
     <script src="script/filter.js" defer></script>
 </head>
@@ -38,9 +39,20 @@
                 <div id="authDropdown" class="auth-dropdown">
                     <div class="address-section" id="profileAddressSection">
                         <label for="userAddressInput">Адрес доставки:</label>
-                        <input type="text" id="userAddressInput" placeholder="Нажмите для выбора на карте" autocomplete="off" readonly style="cursor: pointer;">
+                        <input type="text" id="userAddressInput" placeholder="Нажмите для выбора на карте"
+                            autocomplete="off" readonly style="cursor: pointer;">
                         <button id="saveAddressBtn">Сохранить адрес</button>
                     </div>
+                    <!-- Кнопка "Мои заказы" для обычного пользователя -->
+                    <button id="myOrdersBtn"
+                        style="display: none; background: #f0f0f0; color: #333; width: 100%; padding: 8px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 6px;">
+                        <i class="fa-solid fa-box" style="margin-right: 5px;"></i> Мои заказы
+                    </button>
+                    <!-- Кнопка админа для управления ролями -->
+                    <button id="manageUsersBtn"
+                        style="display: none; background: #333; color: white; width: 100%; padding: 8px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; margin-bottom: 6px;">
+                        <i class="fa-solid fa-users-gear" style="margin-right: 5px;"></i> Управление ролями
+                    </button>
                     <button id="logoutBtn">Выйти</button>
                 </div>
             </div>
@@ -87,6 +99,15 @@
                 </div>
             </div>
         </div>
+
+        <div id="kitchenDashboard" style="display: none; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px;">
+                <h2>Панель кухни: Заказы</h2>
+                <button id="refreshOrdersBtn" class="primary-btn" style="width: auto; padding: 8px 16px;">Обновить
+                    список</button>
+            </div>
+            <div id="ordersContainer" class="orders-container"></div>
+        </div>
     </main>
 
     <footer>
@@ -125,6 +146,7 @@
         </div>
     </aside>
 
+    <!-- Модалка авторизации -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <button id="closeModal" type="button" class="icon-btn close-modal-btn">✕</button>
@@ -139,12 +161,14 @@
                 </div>
                 <button type="submit" id="submitModalBtn">Войти</button>
             </form>
-            <p id="toggleAuthMode" style="font-size: 13px; cursor: pointer; color: var(--text-muted-dark); margin-top: 10px; text-align: center;">
+            <p id="toggleAuthMode"
+                style="font-size: 13px; cursor: pointer; color: var(--text-muted-dark); margin-top: 10px; text-align: center;">
                 Нет аккаунта? Зарегистрироваться
             </p>
         </div>
     </div>
 
+    <!-- Модалка добавления/редактирования товара (Админ) -->
     <div id="adminModal" class="modal">
         <div class="modal-content">
             <button id="closeAdminModal" type="button" class="icon-btn close-modal-btn">✕</button>
@@ -157,20 +181,25 @@
                     <input type="text" id="adminItemName" placeholder="Название товара" autocomplete="off" required>
                 </div>
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="text" id="adminItemDesc" placeholder="Состав/Описание (необязательно)" autocomplete="off">
+                    <input type="text" id="adminItemDesc" placeholder="Состав/Описание (необязательно)"
+                        autocomplete="off">
                 </div>
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="number" id="adminItemPrice" placeholder="Цена (только цифры)" autocomplete="off" required>
+                    <input type="number" id="adminItemPrice" placeholder="Цена (только цифры)" autocomplete="off"
+                        required>
                 </div>
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="text" id="adminItemImg" placeholder="Путь к фото (images/name.jpg)" value="images/default.jpg" autocomplete="off" required>
+                    <input type="text" id="adminItemImg" placeholder="Путь к фото (images/name.jpg)"
+                        value="images/default.jpg" autocomplete="off" required>
                 </div>
                 <button type="submit" id="adminSubmitBtnInline">Сохранить</button>
-                <button type="button" id="adminDeleteBtnInline" style="background: #ff3b30; margin-top: 5px; display: none;">Удалить товар</button>
+                <button type="button" id="adminDeleteBtnInline"
+                    style="background: #ff3b30; margin-top: 5px; display: none;">Удалить товар</button>
             </form>
         </div>
     </div>
 
+    <!-- Модалка управления категориями (Админ) -->
     <div id="categoryModal" class="modal">
         <div class="modal-content">
             <button id="closeCategoryModal" type="button" class="icon-btn close-modal-btn">✕</button>
@@ -179,48 +208,40 @@
             <form id="categoryFormInline">
                 <input type="hidden" id="categoryItemId">
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="text" id="categoryItemName" placeholder="Название категории" autocomplete="off" required>
+                    <input type="text" id="categoryItemName" placeholder="Название категории" autocomplete="off"
+                        required>
                 </div>
                 <button type="submit" id="categorySubmitBtnInline">Сохранить</button>
-                <button type="button" id="categoryDeleteBtnInline" style="background: #ff3b30; margin-top: 5px; display: none;">Удалить категорию</button>
+                <button type="button" id="categoryDeleteBtnInline"
+                    style="background: #ff3b30; margin-top: 5px; display: none;">Удалить категорию</button>
             </form>
         </div>
     </div>
 
+    <!-- Модалка чекаута -->
     <div id="checkoutModal" class="modal">
         <div class="modal-content" style="width: 380px;">
             <button id="closeCheckoutModal" type="button" class="icon-btn close-modal-btn">✕</button>
             <div class="modal-icon"><i class="fa-solid fa-truck-fast"></i></div>
             <h2>Оформление заказа</h2>
             <form id="checkoutForm" class="realistic-checkout-form">
-                
                 <div class="form-group" style="padding-top: 0;">
                     <label class="checkout-label">Куда везем?</label>
-                    <input type="text" id="checkoutAddressInput" placeholder="Нажмите для выбора на карте 📍" autocomplete="off" readonly required style="cursor: pointer;">
+                    <input type="text" id="checkoutAddressInput" placeholder="Нажмите для выбора на карте 📍"
+                        autocomplete="off" readonly required style="cursor: pointer;">
                 </div>
-
-                <div class="form-row">
-                    <div class="form-group" style="padding-top: 0;">
-                        <label class="checkout-label">Время доставки</label>
-                        <select id="checkoutDeliveryTime" class="checkout-select">
-                            <option value="asap">Как можно скорее (~45 мин)</option>
-                            <option value="scheduled">Ко времени (предзаказ)</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="padding-top: 0;">
-                        <label class="checkout-label">Оплата</label>
-                        <select id="checkoutPaymentMethod" class="checkout-select">
-                            <option value="card_courier">Картой курьеру</option>
-                            <option value="cash">Наличными</option>
-                        </select>
-                    </div>
+                <div class="form-group" style="padding-top: 0;">
+                    <label class="checkout-label">Оплата</label>
+                    <select id="checkoutPaymentMethod" class="checkout-select">
+                        <option value="card_courier">Картой курьеру</option>
+                        <option value="cash">Наличными</option>
+                    </select>
                 </div>
-
                 <div class="form-group" style="padding-top: 0;">
                     <label class="checkout-label">Комментарий к заказу (необязательно)</label>
-                    <textarea id="checkoutComment" placeholder="Подъезд, домофон, или сдача с 5000..." rows="2"></textarea>
+                    <textarea id="checkoutComment" placeholder="Подъезд, домофон, или сдача с 5000..."
+                        rows="2"></textarea>
                 </div>
-
                 <div class="checkout-summary">
                     <div class="summary-row">
                         <span>Сумма заказа:</span>
@@ -231,25 +252,56 @@
                         <span>Бесплатно</span>
                     </div>
                 </div>
-                
                 <button type="submit" style="margin-top: 10px;">Подтвердить заказ</button>
             </form>
         </div>
     </div>
 
+    <!-- Модалка карты -->
     <div id="mapModal" class="modal">
         <div class="modal-content map-modal-wide">
             <button id="closeMapModal" type="button" class="icon-btn close-modal-btn">✕</button>
             <div class="modal-icon"><i class="fa-solid fa-map-location-dot"></i></div>
             <h2>Выберите адрес на карте</h2>
-            <div id="deliveryMap" style="width: 100%; height: 400px; margin-top: 15px; border-radius: 8px; background-color: #f0f0f0; z-index: 1;"></div>
+            <div id="deliveryMap"
+                style="width: 100%; height: 400px; margin-top: 15px; border-radius: 8px; background-color: #f0f0f0; z-index: 1;">
+            </div>
             <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                <input type="text" id="mapSelectedAddressInput" readonly style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;" placeholder="Кликните на карту, чтобы выбрать адрес">
-                <button type="button" id="confirmMapAddressBtn" class="primary-btn" style="width: 100%; padding: 12px; font-weight: bold;" disabled>Подтвердить адрес</button>
+                <input type="text" id="mapSelectedAddressInput" readonly
+                    style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;"
+                    placeholder="Кликните на карту, чтобы выбрать адрес">
+                <button type="button" id="confirmMapAddressBtn" class="primary-btn"
+                    style="width: 100%; padding: 12px; font-weight: bold;" disabled>Подтвердить адрес</button>
             </div>
         </div>
     </div>
-    
+
+    <!-- Модалка управления пользователями (Админ) -->
+    <div id="usersModal" class="modal">
+        <div class="modal-content map-modal-wide">
+            <button id="closeUsersModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-users-gear"></i></div>
+            <h2>Управление пользователями</h2>
+            <div class="form-group" style="width: 100%; margin-bottom: 15px; padding-top: 0;">
+                <input type="tel" id="searchUserPhone" placeholder="Поиск по номеру +7(7..." autocomplete="off" style="width: 100%;">
+            </div>
+            <div id="usersContainer" class="users-container">
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка "Мои заказы" (Пользователь) -->
+    <div id="userOrdersModal" class="modal">
+        <div class="modal-content map-modal-wide" style="max-height: 80vh; overflow-y: auto;">
+            <button id="closeUserOrdersModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-box-open"></i></div>
+            <h2>Мои заказы</h2>
+            <div id="userOrdersContainer" class="orders-container">
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для всплывающих уведомлений -->
     <div id="toastContainer" class="toast-container"></div>
 
 </body>

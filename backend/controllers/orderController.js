@@ -1,14 +1,13 @@
+// orderController.js
 const db = require('../database/db');
 
-// Безопасное добавление новых колонок для реалистичного чекаута
-// Если колонки уже есть, SQLite просто проигнорирует ошибку
-db.run("ALTER TABLE orders ADD COLUMN payment_method TEXT", () => {});
-db.run("ALTER TABLE orders ADD COLUMN delivery_time TEXT", () => {});
-db.run("ALTER TABLE orders ADD COLUMN comment TEXT", () => {});
+// Безопасное добавление новых колонок 
+db.run("ALTER TABLE orders ADD COLUMN payment_method TEXT", () => { });
+db.run("ALTER TABLE orders ADD COLUMN comment TEXT", () => { });
+db.run("ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'new'", () => { });
 
 const createOrder = (req, res) => {
-    // Принимаем новые поля из реалистичного чекаута
-    const { userId, address, items, paymentMethod, deliveryTime, comment } = req.body;
+    const { userId, address, items, paymentMethod, comment } = req.body;
 
     if (!userId || !address || !items || items.length === 0) {
         return res.status(400).json({ error: "Не все обязательные поля заполнены" });
@@ -40,10 +39,9 @@ const createOrder = (req, res) => {
                 totalPrice += price * item.quantity;
             });
 
-            // Создаем заказ с новыми реалистичными полями
             db.run(
-                'INSERT INTO orders (user_id, address, total_price, payment_method, delivery_time, comment) VALUES (?, ?, ?, ?, ?, ?)',
-                [userId, address, totalPrice, paymentMethod || 'cash', deliveryTime || 'asap', comment || ''],
+                'INSERT INTO orders (user_id, address, total_price, payment_method, comment, status) VALUES (?, ?, ?, ?, ?, ?)',
+                [userId, address, totalPrice, paymentMethod || 'cash', comment || '', 'new'],
                 function (err) {
                     if (err) {
                         return res.status(500).json({ error: err.message });
@@ -51,7 +49,7 @@ const createOrder = (req, res) => {
 
                     const orderId = this.lastID;
                     const stmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)');
-                    
+
                     let completed = 0;
                     let hasError = false;
 
@@ -85,4 +83,51 @@ const createOrder = (req, res) => {
     });
 };
 
-module.exports = { createOrder };
+const getOrders = async (req, res) => {
+    //console.log("Попытка получения заказов...");
+    try {
+        // Оборачиваем запрос в Promise
+        const getRows = (sql, params) => {
+            return new Promise((resolve, reject) => {
+                db.all(sql, params, (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+        };
+
+        // Теперь можно использовать await
+        const orders = await getRows(`
+            SELECT o.*, u.name as user_name, u.phone as user_phone
+            FROM orders o
+            JOIN users u ON o.user_id = u.id
+            ORDER BY o.id DESC
+        `, []);
+
+        const items = await getRows(`
+            SELECT oi.*, p.name AS title
+            FROM order_items oi 
+            JOIN products p ON oi.product_id = p.id
+        `, []);
+
+        orders.forEach(o => {
+            o.items = items.filter(i => i.order_id === o.id);
+        });
+
+        res.json(orders);
+    } catch (err) {
+        console.error("КРИТИЧЕСКАЯ ОШИБКА:", err);
+        return res.status(500).json({ error: "Ошибка при получении данных: " + err.message });
+    }
+};
+
+const updateOrderStatus = (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    db.run("UPDATE orders SET status = ? WHERE id = ?", [status, id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Статус успешно обновлен" });
+    });
+};
+
+module.exports = { createOrder, getOrders, updateOrderStatus };

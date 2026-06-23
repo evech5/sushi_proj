@@ -1,5 +1,7 @@
+// script/script.js
 let dataMapping = {};
 let isAdmin = false;
+let isKitchen = false;
 
 let categoriesMap = {};
 let cartItems = [];
@@ -28,13 +30,11 @@ function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
-    // Иконка в зависимости от типа
     const icon = type === 'success' ? '<i class="fa-solid fa-check-circle" style="color:#34c759;"></i>' : '<i class="fa-solid fa-triangle-exclamation" style="color:#ff3b30;"></i>';
     
     toast.innerHTML = `${icon} <span>${message}</span>`;
     container.appendChild(toast);
 
-    // Удаляем тост из DOM после завершения анимации (3.4 сек)
     setTimeout(() => {
         if (toast.parentNode) {
             toast.parentNode.removeChild(toast);
@@ -63,6 +63,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const userAddressInput = document.querySelector("#userAddressInput");
     const saveAddressBtn = document.querySelector("#saveAddressBtn");
     const profileAddressSection = document.querySelector("#profileAddressSection");
+    
+    const myOrdersBtn = document.querySelector("#myOrdersBtn");
+    const userOrdersModal = document.querySelector("#userOrdersModal");
+    const closeUserOrdersModal = document.querySelector("#closeUserOrdersModal");
 
     const checkoutModal = document.querySelector("#checkoutModal");
     const closeCheckoutModal = document.querySelector("#closeCheckoutModal");
@@ -70,15 +74,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const checkoutAddressInput = document.querySelector("#checkoutAddressInput");
     const checkoutTotalSum = document.querySelector("#checkoutTotalSum");
     
-    // Новые поля реалистичного чекаута
-    const checkoutDeliveryTime = document.querySelector("#checkoutDeliveryTime");
     const checkoutPaymentMethod = document.querySelector("#checkoutPaymentMethod");
     const checkoutComment = document.querySelector("#checkoutComment");
 
     const categoryFilter = document.querySelector("#categoryFilter");
     const priceSort = document.querySelector("#priceSort");
 
-    // Карта
     const mapModal = document.querySelector("#mapModal");
     const closeMapModal = document.querySelector("#closeMapModal");
     const confirmMapAddressBtn = document.querySelector("#confirmMapAddressBtn");
@@ -87,13 +88,19 @@ document.addEventListener("DOMContentLoaded", () => {
     let mapPlacemark = null;
     let currentAddressTargetInput = null;
 
+    const refreshOrdersBtn = document.querySelector("#refreshOrdersBtn");
+    const manageUsersBtn = document.querySelector("#manageUsersBtn");
+    const usersModal = document.querySelector("#usersModal");
+    const closeUsersModal = document.querySelector("#closeUsersModal");
+    const searchUserPhone = document.querySelector("#searchUserPhone");
+
     const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
     let authMode = "login";
 
     function updateCartUI(skipPost = false) {
         localStorage.setItem(getCartStorageKey(), JSON.stringify(cartItems));
 
-        if (!skipPost && !isAdmin) {
+        if (!skipPost && !isAdmin && !isKitchen) {
             saveCartToDB();
         }
 
@@ -207,12 +214,13 @@ document.addEventListener("DOMContentLoaded", () => {
             <p class="price">${displayPriceCard}</p>
         `;
 
-        // Клик по карточке: Админ открывает редактирование, Пользователь добавляет в корзину
         card.addEventListener("click", async () => {
             if (isAdmin) {
                 window.openAdminModal('edit', item.id);
                 return;
             }
+            if (isKitchen) return;
+
             try {
                 const response = await fetch(`http://localhost:3000/api/products/${item.id}`);
                 if (response.ok) {
@@ -228,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function loadCartFromDB() {
-        if (isAdmin) return; // Админу не нужно грузить корзину
+        if (isAdmin || isKitchen) return;
 
         const currentUser = localStorage.getItem("currentUser");
         if (!currentUser) {
@@ -268,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function saveCartToDB() {
-        if (isAdmin) return; // Админу не сохраняем корзину
+        if (isAdmin || isKitchen) return; 
         const currentUser = localStorage.getItem("currentUser");
         if (!currentUser) return;
 
@@ -603,6 +611,34 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    if (searchUserPhone) {
+        searchUserPhone.addEventListener("input", (e) => {
+            let matrix = "+7 (7__) ___-__-__",
+                i = 0,
+                def = matrix.replace(/\D/g, ""),
+                val = searchUserPhone.value.replace(/\D/g, "");
+
+            if (def.length >= val.length) val = def;
+
+            searchUserPhone.value = matrix.replace(/./g, function (a) {
+                return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? "" : a;
+            });
+
+            loadUsersForAdmin(searchUserPhone.value.trim());
+        });
+
+        searchUserPhone.addEventListener("focus", () => {
+            if (searchUserPhone.value === "") searchUserPhone.value = "+7 (7";
+        });
+
+        searchUserPhone.addEventListener("blur", () => {
+            if (searchUserPhone.value === "+7 " || searchUserPhone.value === "+7 (") {
+                searchUserPhone.value = "";
+                loadUsersForAdmin();
+            }
+        });
+    }
+
     function setError(inputElement, errorMessage) {
         const parent = inputElement.parentElement;
         inputElement.classList.add("error-field");
@@ -635,6 +671,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentUser) {
             const user = JSON.parse(currentUser);
             isAdmin = user.status === "admin";
+            isKitchen = user.status === "kitchen";
             if (loginBtnSpan) loginBtnSpan.textContent = user.name;
 
             if (loginBtnIcon) {
@@ -657,17 +694,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 userAddressInput.value = user.address || "";
             }
 
-            // ПРОВЕРКА РОЛИ: Скрываем пользовательские элементы от администратора
             if (isAdmin) {
+                if (manageUsersBtn) manageUsersBtn.style.display = "block";
+                if (myOrdersBtn) myOrdersBtn.style.display = "none";
                 if (basketBtn) basketBtn.style.display = "none";
                 if (profileAddressSection) profileAddressSection.style.display = "none";
+                document.getElementById("kitchenDashboard").style.display = "none";
+                document.getElementById("goods").style.display = "block";
+                document.getElementById("categories").style.display = "flex";
+            } else if (isKitchen) {
+                if (manageUsersBtn) manageUsersBtn.style.display = "none";
+                if (myOrdersBtn) myOrdersBtn.style.display = "none";
+                if (basketBtn) basketBtn.style.display = "none";
+                if (profileAddressSection) profileAddressSection.style.display = "none";
+                document.getElementById("goods").style.display = "none";
+                document.getElementById("categories").style.display = "none";
+                document.getElementById("kitchenDashboard").style.display = "block";
+                loadKitchenOrders();
             } else {
+                if (manageUsersBtn) manageUsersBtn.style.display = "none";
+                if (myOrdersBtn) myOrdersBtn.style.display = "block";
                 if (basketBtn) basketBtn.style.display = "flex";
                 if (profileAddressSection) profileAddressSection.style.display = "flex";
+                document.getElementById("kitchenDashboard").style.display = "none";
+                document.getElementById("goods").style.display = "block";
+                document.getElementById("categories").style.display = "flex";
             }
-
         } else {
             isAdmin = false;
+            isKitchen = false;
             if (loginBtnSpan) loginBtnSpan.textContent = "Войти";
             if (loginBtnIcon) {
                 loginBtnIcon.className = "fa-solid fa-user";
@@ -682,8 +737,14 @@ document.addEventListener("DOMContentLoaded", () => {
             if (userAddressInput) {
                 userAddressInput.value = "";
             }
+            if (manageUsersBtn) manageUsersBtn.style.display = "none";
+            if (myOrdersBtn) myOrdersBtn.style.display = "none";
             if (basketBtn) basketBtn.style.display = "flex";
             if (profileAddressSection) profileAddressSection.style.display = "flex";
+            
+            document.getElementById("kitchenDashboard").style.display = "none";
+            document.getElementById("goods").style.display = "block";
+            document.getElementById("categories").style.display = "flex";
         }
 
         loadCartFromDB();
@@ -742,7 +803,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ЛОГИКА ИНТЕГРАЦИИ КАРТ OPENSTREETMAP (LEAFLET)
     if (checkoutAddressInput) {
         checkoutAddressInput.addEventListener("click", () => {
             currentAddressTargetInput = checkoutAddressInput; 
@@ -842,7 +902,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ОТПРАВКА ЗАКАЗА С НОВЫМИ ПОЛЯМИ
     if (checkoutForm) {
         checkoutForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -861,12 +920,10 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.setItem("currentUser", JSON.stringify(user));
             if (userAddressInput) userAddressInput.value = addressValue;
 
-            // Формируем payload с учетом новых полей из формы чекаута
             const orderData = {
                 userId: user.id,
                 address: addressValue,
                 paymentMethod: checkoutPaymentMethod ? checkoutPaymentMethod.value : 'cash',
-                deliveryTime: checkoutDeliveryTime ? checkoutDeliveryTime.value : 'asap',
                 comment: checkoutComment ? checkoutComment.value.trim() : '',
                 items: cartItems.map(item => ({ id: item.id, quantity: item.quantity }))
             };
@@ -1046,12 +1103,249 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cartOverlay) cartOverlay.classList.remove("active");
             if (checkoutModal) checkoutModal.classList.remove("active");
             if (mapModal) mapModal.classList.remove("active");
+            if (usersModal) usersModal.classList.remove("active");
+            if (userOrdersModal) userOrdersModal.classList.remove("active");
             if (suggestionsContainer) suggestionsContainer.classList.remove("active");
         }
     });
 
     checkAuthStatus();
     
+    // --- ПАНЕЛЬ КУХНИ ---
+    window.updateOrderStatus = async function(id, status) {
+        const user = JSON.parse(localStorage.getItem("currentUser"));
+        try {
+            const res = await fetch(`http://localhost:3000/api/orders/${id}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+                body: JSON.stringify({ status })
+            });
+            if(res.ok) {
+                showToast("Статус изменен", "success");
+                loadKitchenOrders();
+            } else {
+                showToast("Ошибка при изменении статуса", "error");
+            }
+        } catch(e) { 
+            showToast("Ошибка соединения", "error"); 
+        }
+    }
+
+    async function loadKitchenOrders() {
+        const user = JSON.parse(localStorage.getItem("currentUser"));
+        if (!user) return;
+        try {
+            const res = await fetch("http://localhost:3000/api/orders", {
+                headers: { "x-user-id": user.id }
+            });
+            if (!res.ok) throw new Error();
+            const orders = await res.json();
+            const container = document.getElementById("ordersContainer");
+            container.innerHTML = "";
+            
+            if (orders.length === 0) {
+                container.innerHTML = "<p style='padding: 20px;'>Нет активных заказов</p>";
+                return;
+            }
+
+            orders.forEach(o => {
+                const card = document.createElement('div');
+                card.className = 'order-card';
+                let itemsHtml = o.items.map(i => `<li>${i.title} <strong>x${i.quantity}</strong></li>`).join('');
+                
+                const statusMap = {
+                    'new': 'Новый',
+                    'preparing': 'Готовится',
+                    'ready': 'Готов',
+                    'delivered': 'Выдан'
+                };
+
+                let buttonsHtml = '';
+                if (o.status === 'new') buttonsHtml = `<button onclick="updateOrderStatus(${o.id}, 'preparing')">Взять в работу</button>`;
+                else if (o.status === 'preparing') buttonsHtml = `<button onclick="updateOrderStatus(${o.id}, 'ready')">Готово (Ожидает выдачи)</button>`;
+                else if (o.status === 'ready') buttonsHtml = `<button onclick="updateOrderStatus(${o.id}, 'delivered')">Выдан/Доставлен</button>`;
+
+                card.innerHTML = `
+                    <h3>Заказ #${o.id} <span class="status-badge ${o.status}">${statusMap[o.status] || o.status}</span></h3>
+                    <p><strong>Клиент:</strong> ${o.user_name} (${o.user_phone})</p>
+                    <p><strong>Адрес:</strong> ${o.address}</p>
+                    <p><strong>Комментарий:</strong> ${o.comment || 'Нет'}</p>
+                    <p><strong>Оплата:</strong> ${o.payment_method === 'cash' ? 'Наличными' : 'Картой'}</p>
+                    <p><strong>Сумма:</strong> ${o.total_price} ₸</p>
+                    <ul>${itemsHtml}</ul>
+                    <div class="order-actions">${buttonsHtml}</div>
+                `;
+                container.appendChild(card);
+            });
+        } catch(e) {
+            showToast("Не удалось загрузить заказы", "error");
+        }
+    }
+
+    if (refreshOrdersBtn) {
+        refreshOrdersBtn.addEventListener('click', loadKitchenOrders);
+    }
+    
+    // --- ПАНЕЛЬ АДМИНА ПОЛЬЗОВАТЕЛЕЙ ---
+    if (manageUsersBtn) {
+        manageUsersBtn.addEventListener('click', () => {
+            if (authDropdown) authDropdown.classList.remove('active');
+            if (usersModal) usersModal.classList.add('active');
+            if (searchUserPhone) searchUserPhone.value = "";
+            loadUsersForAdmin();
+        });
+    }
+    
+    if (closeUsersModal) {
+        closeUsersModal.addEventListener('click', () => {
+            if (usersModal) usersModal.classList.remove('active');
+        });
+    }
+    
+    async function loadUsersForAdmin(phoneQuery = "") {
+        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        if (!currentUser) return;
+        
+        try {
+            const url = phoneQuery 
+                ? `http://localhost:3000/api/users?phone=${encodeURIComponent(phoneQuery)}` 
+                : `http://localhost:3000/api/users`;
+
+            const res = await fetch(url, {
+                headers: { "x-user-id": currentUser.id }
+            });
+            
+            if (res.ok) {
+                const users = await res.json();
+                const container = document.getElementById("usersContainer");
+                
+                let html = `
+                    <div class="user-row user-row-header">
+                        <span>ID</span>
+                        <span>Имя</span>
+                        <span>Телефон</span>
+                        <span>Роль</span>
+                    </div>
+                `;
+
+                if (users.length === 0) {
+                    html += `<div style="text-align: center; padding: 20px; font-weight: 600; color: #707074;">Пользователи не найдены</div>`;
+                }
+
+                users.forEach(u => {
+                    const disabled = (u.id === currentUser.id) ? 'disabled title="Нельзя изменить свою собственную роль"' : '';
+                    
+                    html += `
+                        <div class="user-row">
+                            <span>#${u.id}</span>
+                            <span>${u.name}</span>
+                            <span>${u.phone}</span>
+                            <select onchange="changeUserRole(${u.id}, this.value)" ${disabled}>
+                                <option value="user" ${u.status === 'user' ? 'selected' : ''}>Пользователь</option>
+                                <option value="kitchen" ${u.status === 'kitchen' ? 'selected' : ''}>Кухня</option>
+                                <option value="admin" ${u.status === 'admin' ? 'selected' : ''}>Админ</option>
+                            </select>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } else {
+                showToast("Ошибка при загрузке пользователей", "error");
+            }
+        } catch (e) {
+            showToast("Ошибка соединения с сервером", "error");
+        }
+    }
+    
+    window.changeUserRole = async function(userId, newStatus) {
+        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        try {
+            const res = await fetch(`http://localhost:3000/api/users/${userId}/status`, {
+                method: "PUT",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "x-user-id": currentUser.id 
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            
+            if (res.ok) {
+                showToast("Роль пользователя успешно обновлена", "success");
+            } else {
+                const data = await res.json();
+                showToast("Ошибка: " + data.error, "error");
+                loadUsersForAdmin(searchUserPhone ? searchUserPhone.value.trim() : "");
+            }
+        } catch (e) {
+            showToast("Ошибка соединения", "error");
+            loadUsersForAdmin(searchUserPhone ? searchUserPhone.value.trim() : "");
+        }
+    }
+
+    // --- МОИ ЗАКАЗЫ (ПОЛЬЗОВАТЕЛЬ) ---
+    if (myOrdersBtn) {
+        myOrdersBtn.addEventListener("click", () => {
+            if (authDropdown) authDropdown.classList.remove('active');
+            if (userOrdersModal) userOrdersModal.classList.add('active');
+            loadUserOrders();
+        });
+    }
+
+    if (closeUserOrdersModal) {
+        closeUserOrdersModal.addEventListener("click", () => {
+            if (userOrdersModal) userOrdersModal.classList.remove("active");
+        });
+    }
+
+    async function loadUserOrders() {
+        const user = JSON.parse(localStorage.getItem("currentUser"));
+        if (!user) return;
+
+        try {
+            const res = await fetch("http://localhost:3000/api/orders", {
+                headers: { "x-user-id": user.id }
+            });
+            if (!res.ok) throw new Error();
+            const orders = await res.json();
+            const container = document.getElementById("userOrdersContainer");
+            container.innerHTML = "";
+
+            const myOrders = orders.filter(o => o.user_id === user.id || o.user_phone === user.phone);
+
+            if (myOrders.length === 0) {
+                container.innerHTML = "<p style='padding: 20px; text-align: center;'>У вас пока нет заказов</p>";
+                return;
+            }
+
+            myOrders.sort((a, b) => b.id - a.id);
+
+            myOrders.forEach(o => {
+                const card = document.createElement('div');
+                card.className = 'order-card';
+                
+                let itemsHtml = o.items.map(i => `<li>${i.title} <strong>x${i.quantity}</strong></li>`).join('');
+                
+                const statusMap = {
+                    'new': 'В обработке',
+                    'preparing': 'Готовится',
+                    'ready': 'В пути / Ожидает выдачи',
+                    'delivered': 'Выполнен'
+                };
+
+                card.innerHTML = `
+                    <h3>Заказ #${o.id} <span class="status-badge ${o.status}">${statusMap[o.status] || o.status}</span></h3>
+                    <p><strong>Адрес:</strong> ${o.address}</p>
+                    <p><strong>Сумма:</strong> ${o.total_price} ₸</p>
+                    <p><strong>Оплата:</strong> ${o.payment_method === 'cash' ? 'Наличными' : 'Картой курьеру'}</p>
+                    <ul style="margin-top: 10px;">${itemsHtml}</ul>
+                `;
+                container.appendChild(card);
+            });
+        } catch (e) {
+            showToast("Не удалось загрузить ваши заказы", "error");
+        }
+    }
+
     const adminModal = document.getElementById("adminModal");
     const closeAdminModal = document.getElementById("closeAdminModal");
     const adminFormInline = document.getElementById("adminFormInline");

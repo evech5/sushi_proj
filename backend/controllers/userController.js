@@ -1,7 +1,17 @@
 const db = require('../database/db');
 
 const getUsers = (req, res) => {
-    db.all("SELECT id, name, phone, status FROM users", [], (err, rows) => {
+    const { phone } = req.query; // Получаем параметр из запроса: /api/users?phone=123
+
+    let sql = "SELECT id, name, phone, status FROM users";
+    let params = [];
+
+    if (phone) {
+        sql += " WHERE phone LIKE ?";
+        params = [`%${phone}%`]; // Ищем частичное совпадение
+    }
+
+    db.all(sql, params, (err, rows) => {
         if (err) {
             return res.status(500).json({ error: "Ошибка базы данных" });
         }

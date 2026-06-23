@@ -1,3 +1,4 @@
+/* style.css */
 html {
     font-family: 'Geologica', sans-serif;
     scroll-behavior: smooth;
@@ -1057,6 +1058,124 @@ button {
     margin: 0;
 }
 
+/* --- СТИЛИ ДЛЯ КУХНИ --- */
+.orders-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.order-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.order-card h3 {
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.order-card p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.order-card ul {
+    margin: 10px 0;
+    padding-left: 20px;
+    font-size: 14px;
+    background: var(--bg-grey);
+    border-radius: 8px;
+    padding: 10px 10px 10px 25px;
+}
+
+.status-badge {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.status-badge.new { background: #ff3b30; color: white; }
+.status-badge.preparing { background: #ffcc00; color: black; }
+.status-badge.ready { background: #34c759; color: white; }
+.status-badge.delivered { background: #e5e5ea; color: #8e8e93; }
+
+.order-actions button {
+    background: var(--bg-dark);
+    color: white;
+    border: none;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    width: 100%;
+    margin-top: 5px;
+}
+
+.order-actions button:hover {
+    background: #333;
+}
+
+/* --- СТИЛИ ДЛЯ ПАНЕЛИ АДМИНА ПОЛЬЗОВАТЕЛЕЙ --- */
+.users-container {
+    width: 100%;
+    margin-top: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.user-row {
+    display: grid;
+    grid-template-columns: 0.8fr 2fr 2fr 1.5fr;
+    gap: 15px;
+    align-items: center;
+    background: var(--bg-grey);
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.user-row select {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+}
+
+.user-row select:disabled {
+    cursor: not-allowed;
+    background: #f0f0f0;
+    color: #999;
+}
+
+.user-row-header {
+    font-weight: 700;
+    background: var(--bg-dark);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
 @media (max-width: 1199px) and (min-width: 769px) {
 
     header,
@@ -1323,7 +1442,29 @@ button {
         width: 100%;
         box-sizing: border-box;
     }
+    
+    /* Адаптив таблицы пользователей */
+    .user-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        text-align: left;
+    }
+    
+    .user-row-header {
+        display: none;
+    }
+    
+    .user-row span::before {
+        font-weight: 700;
+        display: inline-block;
+        width: 80px;
+    }
+    
+    .user-row span:nth-child(1)::before { content: "ID:"; }
+    .user-row span:nth-child(2)::before { content: "Имя:"; }
+    .user-row span:nth-child(3)::before { content: "Телефон:"; }
 }
+
 /* Широкое окно карты для десктопа */
 .modal-content.map-modal-wide {
     max-width: 900px;
@@ -1346,28 +1487,6 @@ button {
     }
     #deliveryMap {
         height: 300px !important; /* Чуть уменьшаем высоту карты на экранах смартфонов */
-    }
-}
-/* --- СТИЛИ ШИРОКОЙ КАРТЫ --- */
-.modal-content.map-modal-wide {
-    max-width: 900px;
-    width: 85%;
-    box-sizing: border-box;
-    transition: width 0.3s ease, max-width 0.3s ease;
-}
-
-.leaflet-control-attribution {
-    font-size: 10px !important;
-}
-
-@media (max-width: 768px) {
-    .modal-content.map-modal-wide {
-        width: 95%;
-        max-width: 100%;
-        padding: 15px;
-    }
-    #deliveryMap {
-        height: 300px !important;
     }
 }
 
