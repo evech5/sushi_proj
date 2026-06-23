@@ -3,63 +3,77 @@ const db = require('../database/db');
 const getProducts = (req, res) => {
     const { category, sort, limit } = req.query;
 
-    let sql = `
-        SELECT p.id, p.name AS title, p.compound AS desc, p.price, p.image AS img, c.name AS category_name 
-        FROM products p
-        JOIN categories c ON p.category_id = c.id
-    `;
-    let params = [];
-    let whereClauses = [];
-
-    if (category && category !== "all") {
-        whereClauses.push("c.name = ?");
-        params.push(category);
-    }
-
-    if (whereClauses.length > 0) {
-        sql += " WHERE " + whereClauses.join(" AND ");
-    }
-
-    if (sort === "low-to-high") {
-        sql += " ORDER BY p.price ASC";
-    } else if (sort === "high-to-low") {
-        sql += " ORDER BY p.price DESC";
-    }
-
-    if (limit) {
-        sql += " LIMIT ?";
-        params.push(parseInt(limit));
-    }
-
-    db.all(sql, params, (err, rows) => {
-        if (err) {
-            console.error("Ошибка БД при получении товаров:", err);
+    // Сначала получаем список категорий, чтобы сгруппировать товары по id
+    // и гарантировать, что даже пустые категории (без товаров) попадут в ответ —
+    // это нужно, чтобы админ мог добавить первый товар в новую категорию.
+    db.all("SELECT id FROM categories ORDER BY id ASC", [], (catErr, categories) => {
+        if (catErr) {
+            console.error("Ошибка БД при получении категорий:", catErr);
             return res.status(500).json({ error: "Ошибка базы данных" });
         }
 
         let groupedResult = {};
-
-        rows.forEach(item => {
-            const cat = item.category_name;
-            if (!groupedResult[cat]) {
-                groupedResult[cat] = [];
+        categories.forEach(cat => {
+            if (!category || category === "all" || String(cat.id) === String(category)) {
+                groupedResult[cat.id] = [];
             }
-
-            const productData = {
-                id: String(item.id),
-                title: item.title,
-                price: `${item.price} ₸`,
-                img: item.img
-            };
-
-            if (item.desc) {
-                productData.desc = item.desc;
-            }
-
-            groupedResult[cat].push(productData);
         });
 
-        res.json(groupedResult);
+        let sql = `
+            SELECT p.id, p.name AS title, p.compound AS desc, p.price, p.image AS img, p.category_id
+            FROM products p
+        `;
+        let params = [];
+        let whereClauses = [];
+
+        if (category && category !== "all") {
+            whereClauses.push("p.category_id = ?");
+            params.push(category);
+        }
+
+        if (whereClauses.length > 0) {
+            sql += " WHERE " + whereClauses.join(" AND ");
+        }
+
+        if (sort === "low-to-high") {
+            sql += " ORDER BY p.price ASC";
+        } else if (sort === "high-to-low") {
+            sql += " ORDER BY p.price DESC";
+        }
+
+        if (limit) {
+            sql += " LIMIT ?";
+            params.push(parseInt(limit));
+        }
+
+        db.all(sql, params, (err, rows) => {
+            if (err) {
+                console.error("Ошибка БД при получении товаров:", err);
+                return res.status(500).json({ error: "Ошибка базы данных" });
+            }
+
+            rows.forEach(item => {
+                const cat = String(item.category_id);
+                if (!groupedResult[cat]) {
+                    groupedResult[cat] = [];
+                }
+
+                const productData = {
+                    id: String(item.id),
+                    title: item.title,
+                    price: `${item.price} ₸`,
+                    img: item.img
+                };
+
+                if (item.desc) {
+                    productData.desc = item.desc;
+                }
+
+                groupedResult[cat].push(productData);
+            });
+
+            res.json(groupedResult);
+        });
     });
 };
 
@@ -67,7 +81,7 @@ const getProductById = (req, res) => {
     const { id } = req.params;
 
     const sql = `
-        SELECT p.id, p.name AS title, p.compound AS desc, p.price, p.image AS img 
+        SELECT p.id, p.name AS title, p.compound AS desc, p.price, p.image AS img, p.category_id 
         FROM products p
         WHERE p.id = ?
     `;
@@ -86,7 +100,8 @@ const getProductById = (req, res) => {
             id: String(row.id),
             title: row.title,
             price: `${row.price} ₸`,
-            img: row.img
+            img: row.img,
+            category_id: row.category_id
         };
 
         if (row.desc) {

@@ -1,16 +1,7 @@
 let dataMapping = {};
 let isAdmin = false;
 
-const dbCategoryIds = {
-    rolls: 1, sets: 2, kombos: 3, fastfood: 4,
-    pizzas: 5, burgers: 6, soups: 7, drinks: 8, deserts: 9
-};
-
-const categoryNamesRU = {
-    rolls: "Роллы", sets: "Сеты", kombos: "Комбо",
-    fastfood: "Фастфуд", pizzas: "Пиццы", burgers: "Бургеры",
-    soups: "Супы", drinks: "Напитки", deserts: "Десерты"
-};
+let categoriesMap = {};
 
 let cartItems = [];
 
@@ -251,10 +242,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             document.querySelectorAll(".category").forEach(container => container.innerHTML = "");
 
-            Object.keys(dataMapping).forEach(categoryKey => {
-                const container = document.querySelector(`#${categoryKey} .category`);
+            Object.keys(dataMapping).forEach(categoryId => {
+                const container = document.querySelector(`#category-${categoryId} .category`);
                 if (container) {
-                    dataMapping[categoryKey].forEach(item => {
+                    dataMapping[categoryId].forEach(item => {
                         container.append(createCard(item));
                     });
 
@@ -265,8 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <i class="fa-solid fa-plus"></i>
                             <p>Добавить товар</p>
                         `;
-                        const catId = dbCategoryIds[categoryKey] || 1;
-                        addCard.onclick = () => window.openAdminModal('add', null, catId);
+                        addCard.onclick = () => window.openAdminModal('add', null, categoryId);
                         container.append(addCard);
                     }
                 }
@@ -283,7 +273,126 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {}
     };
 
-    window.loadProducts();
+    function buildProductQueryString() {
+        const params = new URLSearchParams();
+
+        if (categoryFilter && categoryFilter.value !== "all") {
+            params.append("category", categoryFilter.value);
+        }
+
+        if (priceSort && priceSort.value !== "default") {
+            params.append("sort", priceSort.value);
+        }
+
+        return params.toString() ? `?${params.toString()}` : "";
+    }
+
+    async function loadCategories() {
+        try {
+            const response = await fetch("http://localhost:3000/api/categories");
+            const categories = await response.json();
+
+            categoriesMap = {};
+            categories.forEach(cat => { categoriesMap[cat.id] = cat.name; });
+
+            // --- Навигация по категориям ---
+            const categoriesNavEl = document.querySelector("#categories");
+            if (categoriesNavEl) {
+                categoriesNavEl.querySelectorAll(".dynamic-category-link").forEach(el => el.remove());
+                const addBtn = document.getElementById("addCategoryNavBtn");
+
+                categories.forEach(cat => {
+                    const link = document.createElement("a");
+                    link.href = `#category-${cat.id}`;
+                    link.textContent = cat.name;
+                    link.classList.add("dynamic-category-link");
+
+                    if (addBtn) {
+                        categoriesNavEl.insertBefore(link, addBtn);
+                    } else {
+                        categoriesNavEl.appendChild(link);
+                    }
+                });
+
+                if (addBtn) addBtn.style.display = isAdmin ? "inline-flex" : "none";
+            }
+
+            // --- Выпадающий список фильтра по категориям ---
+            if (categoryFilter) {
+                const previousValue = categoryFilter.value;
+                categoryFilter.querySelectorAll(".dynamic-category-option").forEach(el => el.remove());
+
+                categories.forEach(cat => {
+                    const option = document.createElement("option");
+                    option.value = String(cat.id);
+                    option.textContent = cat.name;
+                    option.classList.add("dynamic-category-option");
+                    categoryFilter.appendChild(option);
+                });
+
+                const savedCategory = localStorage.getItem("ui_category_filter");
+                const candidates = [previousValue, savedCategory].filter(Boolean);
+                const stillValid = candidates.find(val =>
+                    Array.from(categoryFilter.options).some(opt => opt.value === val)
+                );
+                categoryFilter.value = stillValid || "all";
+            }
+
+            // --- Секции категорий товаров ---
+            const goodsEl = document.querySelector("#goods");
+            const filterPanel = document.querySelector("#filterControlPanel");
+
+            if (goodsEl) {
+                goodsEl.querySelectorAll(".dynamic-category-section").forEach(el => el.remove());
+
+                let insertAfter = filterPanel;
+
+                categories.forEach(cat => {
+                    const section = document.createElement("section");
+                    section.classList.add("section", "dynamic-category-section");
+                    section.id = `category-${cat.id}`;
+
+                    const header = document.createElement("div");
+                    header.classList.add("section-header");
+
+                    const heading = document.createElement("h2");
+                    heading.textContent = cat.name;
+                    header.appendChild(heading);
+
+                    if (isAdmin) {
+                        const editBtn = document.createElement("button");
+                        editBtn.type = "button";
+                        editBtn.classList.add("edit-category-btn");
+                        editBtn.innerHTML = `<i class="fa-solid fa-gear"></i>`;
+                        editBtn.addEventListener("click", (e) => {
+                            e.stopPropagation();
+                            window.openCategoryModal('edit', cat.id);
+                        });
+                        header.appendChild(editBtn);
+                    }
+
+                    section.appendChild(header);
+
+                    const itemsContainer = document.createElement("div");
+                    itemsContainer.classList.add("category");
+                    section.appendChild(itemsContainer);
+
+                    if (insertAfter && insertAfter.nextSibling) {
+                        insertAfter.parentNode.insertBefore(section, insertAfter.nextSibling);
+                    } else {
+                        goodsEl.appendChild(section);
+                    }
+                    insertAfter = section;
+                });
+            }
+
+            if (window.loadProducts) {
+                window.loadProducts(buildProductQueryString());
+            }
+        } catch (error) {}
+    }
+
+    loadCategories();
 
     const searchInput = document.querySelector("#searchInput");
     const suggestionsContainer = document.querySelector("#searchSuggestions");
@@ -315,7 +424,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     div.classList.add("suggestion-item");
                     div.innerHTML = `
                         <span>${match.title}</span>
-                        <span class="suggestion-category">${categoryNamesRU[match.category]}</span>
+                        <span class="suggestion-category">${categoriesMap[match.category] || ""}</span>
                     `;
 
                     div.addEventListener("click", () => {
@@ -324,8 +433,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         searchInput.dispatchEvent(new Event('input'));
 
                         setTimeout(() => {
-                            let targetCard = document.querySelector(`#${match.category} [data-title="${match.title}"]`) ||
-                                document.querySelector(`#${match.category} [data-title="${match.title.toLowerCase()}"]`);
+                            let targetCard = document.querySelector(`#category-${match.category} [data-title="${match.title}"]`) ||
+                                document.querySelector(`#category-${match.category} [data-title="${match.title.toLowerCase()}"]`);
 
                             if (targetCard) {
                                 targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -387,11 +496,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (categoryFilter) {
-        const savedCategory = localStorage.getItem("ui_category_filter");
-        if (savedCategory) {
-            categoryFilter.value = savedCategory;
-            setTimeout(() => categoryFilter.dispatchEvent(new Event("change")), 50);
-        }
         categoryFilter.addEventListener("change", (e) => {
             localStorage.setItem("ui_category_filter", e.target.value);
         });
@@ -444,7 +548,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         phoneInput.addEventListener("focus", () => {
-            if (phoneInput.value === "") phoneInput.value = "+7 ";
+            if (phoneInput.value === "") phoneInput.value = "+7 (7";
         });
 
         phoneInput.addEventListener("blur", () => {
@@ -525,7 +629,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         loadCartFromDB();
 
-        if (window.loadProducts) window.loadProducts();
+        loadCategories();
     }
 
     if (saveAddressBtn && userAddressInput) {
@@ -821,7 +925,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const product = await res.json();
 
                 adminIdInput.value = product.id;
-                adminCatInput.value = 1;
+                adminCatInput.value = product.category_id;
 
                 adminNameInput.value = product.title;
                 adminDescInput.value = product.desc || "";
@@ -901,6 +1005,120 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.ok) {
                     adminModal.classList.remove("active");
                     window.loadProducts();
+                } else {
+                    const err = await response.json();
+                    alert("Ошибка: " + err.error);
+                }
+            } catch (error) {}
+        });
+    }
+
+    const categoryModal = document.getElementById("categoryModal");
+    const closeCategoryModal = document.getElementById("closeCategoryModal");
+    const categoryFormInline = document.getElementById("categoryFormInline");
+
+    const categoryIdInput = document.getElementById("categoryItemId");
+    const categoryNameInput = document.getElementById("categoryItemName");
+
+    const categoryModalTitle = document.getElementById("categoryModalTitle");
+    const categoryDeleteBtn = document.getElementById("categoryDeleteBtnInline");
+
+    const addCategoryNavBtn = document.getElementById("addCategoryNavBtn");
+
+    window.openCategoryModal = function (mode, categoryId = null) {
+        if (mode === 'add') {
+            categoryModalTitle.textContent = "Добавить категорию";
+            categoryFormInline.reset();
+            categoryIdInput.value = "";
+            categoryDeleteBtn.style.display = "none";
+        } else if (mode === 'edit') {
+            categoryModalTitle.textContent = "Изменить категорию";
+            categoryDeleteBtn.style.display = "block";
+            categoryIdInput.value = categoryId;
+            categoryNameInput.value = categoriesMap[categoryId] || "";
+        }
+
+        categoryModal.classList.add("active");
+    };
+
+    if (addCategoryNavBtn) {
+        addCategoryNavBtn.addEventListener("click", () => {
+            window.openCategoryModal('add');
+        });
+    }
+
+    if (closeCategoryModal) {
+        closeCategoryModal.addEventListener("click", () => {
+            categoryModal.classList.remove("active");
+        });
+    }
+
+    if (categoryModal) {
+        categoryModal.addEventListener("click", (e) => {
+            if (e.target === categoryModal) {
+                categoryModal.classList.remove("active");
+            }
+        });
+    }
+
+    if (categoryFormInline) {
+        categoryFormInline.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const categoryId = categoryIdInput.value;
+            const method = categoryId ? "PUT" : "POST";
+            const url = categoryId
+                ? `http://localhost:3000/api/categories/${categoryId}`
+                : "http://localhost:3000/api/categories";
+
+            const categoryData = {
+                name: categoryNameInput.value
+            };
+
+            const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+            const headers = { "Content-Type": "application/json" };
+            if (currentUser.id) {
+                headers["x-user-id"] = currentUser.id;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: headers,
+                    body: JSON.stringify(categoryData)
+                });
+
+                if (response.ok) {
+                    categoryModal.classList.remove("active");
+                    loadCategories();
+                } else {
+                    const err = await response.json();
+                    alert("Ошибка: " + err.error);
+                }
+            } catch (error) {}
+        });
+    }
+
+    if (categoryDeleteBtn) {
+        categoryDeleteBtn.addEventListener("click", async () => {
+            const categoryId = categoryIdInput.value;
+            if (!categoryId || !confirm("Точно удалить категорию?")) return;
+
+            const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+            const headers = {};
+            if (currentUser.id) {
+                headers["x-user-id"] = currentUser.id;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/categories/${categoryId}`, {
+                    method: "DELETE",
+                    headers: headers
+                });
+
+                if (response.ok) {
+                    categoryModal.classList.remove("active");
+                    loadCategories();
                 } else {
                     const err = await response.json();
                     alert("Ошибка: " + err.error);

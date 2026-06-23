@@ -50,15 +50,9 @@
     <main>
         <nav id="categories">
             <a href="#">АКЦИИ</a>
-            <a href="#rolls">Роллы</a>
-            <a href="#sets">Сеты</a>
-            <a href="#kombos">Комбо</a>
-            <a href="#fastfood">Фастфуд</a>
-            <a href="#pizzas">Пиццы</a>
-            <a href="#burgers">Бургеры</a>
-            <a href="#soups">Супы</a>
-            <a href="#drinks">Напитки</a>
-            <a href="#deserts">Десерты</a>
+            <button id="addCategoryNavBtn" class="add-category-nav-btn" type="button" style="display: none;">
+                <i class="fa-solid fa-plus"></i> Категория
+            </button>
         </nav>
 
         <div id="goods">
@@ -76,15 +70,6 @@
                     <label>Категория:</label>
                     <select id="categoryFilter">
                         <option value="all">Все товары</option>
-                        <option value="rolls">Роллы</option>
-                        <option value="sets">Сеты</option>
-                        <option value="kombos">Комбо</option>
-                        <option value="fastfood">Фастфуд</option>
-                        <option value="pizzas">Пиццы</option>
-                        <option value="burgers">Бургеры</option>
-                        <option value="soups">Супы</option>
-                        <option value="drinks">Напитки</option>
-                        <option value="deserts">Десерты</option>
                     </select>
                 </div>
 
@@ -97,51 +82,6 @@
                     </select>
                 </div>
             </div>
-
-            <section class="section" id="rolls">
-                <h2>Роллы</h2>
-                <div class="category"></div>
-            </section>
-
-            <section class="section" id="sets">
-                <h2>Сеты</h2>
-                <div class="category"></div>
-            </section>
-
-            <section class="section" id="kombos">
-                <h2>Комбо</h2>
-                <div class="category"></div>
-            </section>
-
-            <section class="section" id="fastfood">
-                <h2>Фастфуд</h2>
-                <div class="category"></div>
-            </section>
-
-            <section class="section" id="pizzas">
-                <h2>Пиццы</h2>
-                <div class="category"></div>
-            </section>
-
-            <section class="section" id="burgers">
-                <h2>Бургеры</h2>
-                <div class="category"></div>
-            </section>
-
-            <section class="section" id="soups">
-                <h2>Супы</h2>
-                <div class="category"></div>
-            </section>
-
-            <section class="section" id="drinks">
-                <h2>Напитки</h2>
-                <div class="category"></div>
-            </section>
-
-            <section class="section" id="deserts">
-                <h2 class="sectionName">Десерты</h2>
-                <div class="category"></div>
-            </section>
         </div>
     </main>
 
@@ -227,6 +167,22 @@
         </div>
     </div>
 
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <button id="closeCategoryModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-tags"></i></div>
+            <h2 id="categoryModalTitle">Добавить категорию</h2>
+            <form id="categoryFormInline">
+                <input type="hidden" id="categoryItemId">
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="categoryItemName" placeholder="Название категории" autocomplete="off" required>
+                </div>
+                <button type="submit" id="categorySubmitBtnInline">Сохранить</button>
+                <button type="button" id="categoryDeleteBtnInline" style="background: #ff3b30; margin-top: 5px; display: none;">Удалить категорию</button>
+            </form>
+        </div>
+    </div>
+
     <div id="checkoutModal" class="modal">
         <div class="modal-content">
             <button id="closeCheckoutModal" type="button" class="icon-btn close-modal-btn">✕</button>
@@ -243,6 +199,7 @@
             </form>
         </div>
     </div>
+    
 </body>
 
 </html>
