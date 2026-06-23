@@ -36,8 +36,13 @@ function initDatabase() {
             )
         `);
 
-        db.run("ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''", () => {});
-        db.run("ALTER TABLE orders ADD COLUMN address TEXT NOT NULL DEFAULT ''", () => {});
+        db.all("PRAGMA table_info(users)", (err, rows) => {
+            if (err) return;
+            const hasAddress = rows.some(row => row.name === 'address');
+            if (!hasAddress) {
+                db.run("ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''");
+            }
+        });
     });
 }
 

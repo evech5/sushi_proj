@@ -32,7 +32,7 @@ const createOrder = (req, res) => {
             });
 
             db.run(
-                'INSERT INTO orders (user_id, delivery_address, total_price, order_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+                'INSERT INTO orders (user_id, address, total_price) VALUES (?, ?, ?)',
                 [userId, address, totalPrice],
                 function (err) {
                     if (err) {
@@ -42,16 +42,31 @@ const createOrder = (req, res) => {
                     const orderId = this.lastID;
                     const stmt = db.prepare('INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)');
                     
-                    items.forEach(item => {
-                        stmt.run(orderId, item.id, item.quantity);
-                    });
-                    stmt.finalize();
+                    let completed = 0;
+                    let hasError = false;
 
-                    db.run('DELETE FROM cart WHERE user_id = ?', [userId], (err) => {
-                        if (err) {
-                            return res.status(500).json({ error: err.message });
-                        }
-                        res.status(201).json({ message: "Заказ успешно создан", orderId });
+                    items.forEach(item => {
+                        stmt.run(orderId, item.id, item.quantity, (runErr) => {
+                            if (hasError) return;
+
+                            if (runErr) {
+                                hasError = true;
+                                stmt.finalize();
+                                return res.status(500).json({ error: runErr.message });
+                            }
+
+                            completed++;
+                            if (completed === items.length) {
+                                stmt.finalize();
+
+                                db.run('DELETE FROM cart WHERE user_id = ?', [userId], (cartErr) => {
+                                    if (cartErr) {
+                                        return res.status(500).json({ error: cartErr.message });
+                                    }
+                                    res.status(201).json({ message: "Заказ успешно создан", orderId });
+                                });
+                            }
+                        });
                     });
                 }
             );
