@@ -1324,3 +1324,27 @@ button {
         box-sizing: border-box;
     }
 }
+/* Широкое окно карты для десктопа */
+.modal-content.map-modal-wide {
+    max-width: 900px;
+    width: 85%;
+    box-sizing: border-box;
+    transition: width 0.3s ease, max-width 0.3s ease;
+}
+
+/* Стилизация копирайта Leaflet, чтобы не ломал дизайн */
+.leaflet-control-attribution {
+    font-size: 10px !important;
+}
+
+/* Сжатие окна только на мобильных телефонах */
+@media (max-width: 768px) {
+    .modal-content.map-modal-wide {
+        width: 95%;
+        max-width: 100%;
+        padding: 15px;
+    }
+    #deliveryMap {
+        height: 300px !important; /* Чуть уменьшаем высоту карты на экранах смартфонов */
+    }
+}

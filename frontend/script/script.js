@@ -49,6 +49,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const categoryFilter = document.querySelector("#categoryFilter");
     const priceSort = document.querySelector("#priceSort");
 
+    const mapModal = document.querySelector("#mapModal");
+    const closeMapModal = document.querySelector("#closeMapModal");
+    const confirmMapAddressBtn = document.querySelector("#confirmMapAddressBtn");
+    const mapSelectedAddressInput = document.querySelector("#mapSelectedAddressInput");
+    let leafletMapInstance = null;
+    let mapPlacemark = null;
+
+    let currentAddressTargetInput = null;
+
     const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
     let authMode = "login";
 
@@ -75,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cartItems.forEach((item, index) => {
             let numericPrice = 0;
             let displayPrice = "";
-            
+
             if (typeof item.price === 'string') {
                 numericPrice = parseInt(item.price.replace(/\D/g, ''));
                 displayPrice = item.price;
@@ -175,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const productData = await response.json();
                     addItemToCart(productData);
                 }
-            } catch (error) {}
+            } catch (error) { }
         });
 
         return card;
@@ -200,14 +209,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`http://localhost:3000/api/cart/${user.id}`);
             if (response.ok) {
                 const dbCart = await response.json();
-                
+
                 if (cartItems.length > 0 && dbCart.length === 0) {
                     await saveCartToDB();
-                } 
+                }
                 else if (dbCart.length > 0) {
                     cartItems = dbCart;
                 }
-                
+
                 localStorage.setItem(`ui_cart_items_${user.phone}`, JSON.stringify(cartItems));
             } else {
                 loadCartFromStorage();
@@ -232,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ items: itemsToSend })
             });
-        } catch (error) {}
+        } catch (error) { }
     }
 
     window.loadProducts = async function (queryString = "") {
@@ -270,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-        } catch (error) {}
+        } catch (error) { }
     };
 
     function buildProductQueryString() {
@@ -295,7 +304,6 @@ document.addEventListener("DOMContentLoaded", () => {
             categoriesMap = {};
             categories.forEach(cat => { categoriesMap[cat.id] = cat.name; });
 
-            // --- Навигация по категориям ---
             const categoriesNavEl = document.querySelector("#categories");
             if (categoriesNavEl) {
                 categoriesNavEl.querySelectorAll(".dynamic-category-link").forEach(el => el.remove());
@@ -317,7 +325,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (addBtn) addBtn.style.display = isAdmin ? "inline-flex" : "none";
             }
 
-            // --- Выпадающий список фильтра по категориям ---
             if (categoryFilter) {
                 const previousValue = categoryFilter.value;
                 categoryFilter.querySelectorAll(".dynamic-category-option").forEach(el => el.remove());
@@ -338,7 +345,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 categoryFilter.value = stillValid || "all";
             }
 
-            // --- Секции категорий товаров ---
             const goodsEl = document.querySelector("#goods");
             const filterPanel = document.querySelector("#filterControlPanel");
 
@@ -389,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (window.loadProducts) {
                 window.loadProducts(buildProductQueryString());
             }
-        } catch (error) {}
+        } catch (error) { }
     }
 
     loadCategories();
@@ -603,7 +609,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     phoneDisplay.className = "user-phone-info";
                     authDropdown.insertBefore(phoneDisplay, authDropdown.querySelector(".address-section"));
                 }
-                phoneDisplay.textContent = user.phone;
+                phoneDisplay.textContent = user.phone + " (Админ)";
             }
 
             if (userAddressInput) {
@@ -628,7 +634,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         loadCartFromDB();
-
         loadCategories();
     }
 
@@ -684,9 +689,108 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (closeCheckoutModal) {
-        closeCheckoutModal.addEventListener("click", () => {
-            if (checkoutModal) checkoutModal.classList.remove("active");
+    // ЛОГИКА ИНТЕГРАЦИИ КАРТ OPENSTREETMAP (LEAFLET)
+    // 1. Клик по адресу в Оформлении заказа
+    if (checkoutAddressInput) {
+        checkoutAddressInput.addEventListener("click", () => {
+            currentAddressTargetInput = checkoutAddressInput; // Запоминаем целевое поле
+            if (mapModal) mapModal.classList.add("active");
+
+            if (!leafletMapInstance && typeof L !== "undefined") {
+                initLeafletMap();
+            } else if (leafletMapInstance) {
+                setTimeout(() => {
+                    leafletMapInstance.invalidateSize();
+                }, 100);
+            }
+        });
+    }
+
+    // 2. Клик по адресу в Личном Кабинете (Открывает карту вместо ввода текста)
+    if (userAddressInput) {
+        userAddressInput.addEventListener("click", () => {
+            currentAddressTargetInput = userAddressInput; // Запоминаем целевое поле
+            if (mapModal) mapModal.classList.add("active");
+
+            if (!leafletMapInstance && typeof L !== "undefined") {
+                initLeafletMap();
+            } else if (leafletMapInstance) {
+                setTimeout(() => {
+                    leafletMapInstance.invalidateSize();
+                }, 100);
+            }
+        });
+    }
+
+    if (closeMapModal) {
+        closeMapModal.addEventListener("click", () => {
+            if (mapModal) mapModal.classList.remove("active");
+        });
+    }
+
+    function initLeafletMap() {
+        leafletMapInstance = L.map("deliveryMap").setView([54.8667, 69.1500], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(leafletMapInstance);
+
+        setTimeout(() => {
+            leafletMapInstance.invalidateSize();
+        }, 200);
+
+        leafletMapInstance.on('click', async function (e) {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+
+            if (mapPlacemark) {
+                mapPlacemark.setLatLng(e.latlng);
+            } else {
+                mapPlacemark = L.marker(e.latlng).addTo(leafletMapInstance);
+            }
+
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ru`);
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data && data.address) {
+                        const addr = data.address;
+
+                        // Извлекаем только название улицы (road/street/etc) и номер дома
+                        let street = addr.road || addr.street || addr.pedestrian || addr.suburb || "";
+                        let houseNumber = addr.house_number || "";
+
+                        let shortAddress = "";
+                        if (street && houseNumber) {
+                            shortAddress = `${street}, ${houseNumber}`;
+                        } else if (street) {
+                            shortAddress = street;
+                        } else {
+                            // Резервный вариант, если структура OSM вернула сырую строку
+                            shortAddress = data.display_name.split(',').slice(0, 2).join(',').trim();
+                        }
+
+                        if (mapSelectedAddressInput) {
+                            mapSelectedAddressInput.value = shortAddress;
+                        }
+                        if (confirmMapAddressBtn) {
+                            confirmMapAddressBtn.disabled = false;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Ошибка геокодирования: ", error);
+            }
+        });
+    }
+
+    if (confirmMapAddressBtn) {
+        confirmMapAddressBtn.addEventListener("click", () => {
+            if (mapSelectedAddressInput && currentAddressTargetInput) {
+                currentAddressTargetInput.value = mapSelectedAddressInput.value;
+            }
+            if (mapModal) mapModal.classList.remove("active");
         });
     }
 
@@ -801,85 +905,83 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    if (loginForm) {
-        loginForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-            let isValid = true;
-            const phoneValue = phoneInput.value.trim();
-            const nameValue = nameInput ? nameInput.value.trim() : "";
-            const digitsCount = phoneValue.replace(/\D/g, "").length;
+        let isValid = true;
+        const phoneValue = phoneInput.value.trim();
+        const nameValue = nameInput ? nameInput.value.trim() : "";
+        const digitsCount = phoneValue.replace(/\D/g, "").length;
 
-            if (phoneValue === "" || phoneValue === "+7 ") {
-                setError(phoneInput, "Поле 'Номер телефона' обязательно");
-                isValid = false;
-            } else if (digitsCount < 11 || !phoneRegex.test(phoneValue)) {
-                setError(phoneInput, "Неверный формат номера телефона");
-                isValid = false;
-            } else {
-                clearError(phoneInput);
-            }
+        if (phoneValue === "" || phoneValue === "+7 ") {
+            setError(phoneInput, "Поле 'Номер телефона' обязательно");
+            isValid = false;
+        } else if (digitsCount < 11 || !phoneRegex.test(phoneValue)) {
+            setError(phoneInput, "Неверный формат номера телефона");
+            isValid = false;
+        } else {
+            clearError(phoneInput);
+        }
 
-            if (authMode === "register" && nameValue === "") {
-                if (nameInput) setError(nameInput, "Введите имя");
-                isValid = false;
-            } else if (nameInput) {
-                clearError(nameInput);
-            }
+        if (authMode === "register" && nameValue === "") {
+            if (nameInput) setError(nameInput, "Введите имя");
+            isValid = false;
+        } else if (nameInput) {
+            clearError(nameInput);
+        }
 
-            if (!isValid) return;
+        if (!isValid) return;
 
-            if (authMode === "register") {
-                try {
-                    const response = await fetch("http://localhost:3000/api/register", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name: nameValue, phone: phoneValue })
-                    });
+        if (authMode === "register") {
+            try {
+                const response = await fetch("http://localhost:3000/api/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: nameValue, phone: phoneValue })
+                });
 
-                    const data = await response.json();
+                const data = await response.json();
 
-                    if (response.ok) {
-                        alert(data.message);
+                if (response.ok) {
+                    alert(data.message);
 
-                        const newUser = { id: data.userId, name: nameValue, phone: phoneValue, status: 'user', address: '' };
-                        localStorage.setItem("currentUser", JSON.stringify(newUser));
+                    const newUser = { id: data.userId, name: nameValue, phone: phoneValue, status: 'user', address: '' };
+                    localStorage.setItem("currentUser", JSON.stringify(newUser));
 
-                        modal.classList.remove("active");
-                        loginForm.reset();
-                        checkAuthStatus();
-                    } else {
-                        alert("Ошибка регистрации: " + data.error);
-                    }
-                } catch (error) {
-                    alert("Не удалось связаться с сервером для регистрации.");
+                    modal.classList.remove("active");
+                    loginForm.reset();
+                    checkAuthStatus();
+                } else {
+                    alert("Ошибка регистрации: " + data.error);
                 }
+            } catch (error) {
+                alert("Не удалось связаться с сервером для регистрации.");
             }
-            else {
-                try {
-                    const response = await fetch("http://localhost:3000/api/logIn", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ phone: phoneValue })
-                    });
+        }
+        else {
+            try {
+                const response = await fetch("http://localhost:3000/api/logIn", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone: phoneValue })
+                });
 
-                    const data = await response.json();
+                const data = await response.json();
 
-                    if (response.ok) {
-                        localStorage.setItem("currentUser", JSON.stringify(data.user));
+                if (response.ok) {
+                    localStorage.setItem("currentUser", JSON.stringify(data.user));
 
-                        modal.classList.remove("active");
-                        loginForm.reset();
-                        checkAuthStatus();
-                    } else {
-                        alert("Ошибка входа: " + data.error);
-                    }
-                } catch (error) {
-                    alert("Не удалось связаться с сервером для входа.");
+                    modal.classList.remove("active");
+                    loginForm.reset();
+                    checkAuthStatus();
+                } else {
+                    alert("Ошибка входа: " + data.error);
                 }
+            } catch (error) {
+                alert("Не удалось связаться с сервером для входа.");
             }
-        });
-    }
+        }
+    });
 
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
@@ -888,12 +990,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cart) cart.classList.remove("active");
             if (cartOverlay) cartOverlay.classList.remove("active");
             if (checkoutModal) checkoutModal.classList.remove("active");
+            if (mapModal) mapModal.classList.remove("active");
             if (suggestionsContainer) suggestionsContainer.classList.remove("active");
         }
     });
 
     checkAuthStatus();
-    
+
     const adminModal = document.getElementById("adminModal");
     const closeAdminModal = document.getElementById("closeAdminModal");
     const adminFormInline = document.getElementById("adminFormInline");
@@ -929,11 +1032,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 adminNameInput.value = product.title;
                 adminDescInput.value = product.desc || "";
-                
+
                 adminPriceInput.value = typeof product.price === 'string' ? product.price.replace(/\D/g, "") : product.price;
-                
+
                 adminImgInput.value = product.img;
-            } catch (e) {}
+            } catch (e) { }
         }
 
         adminModal.classList.add("active");
@@ -981,7 +1084,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const err = await response.json();
                     alert("Ошибка: " + err.error);
                 }
-            } catch (error) {}
+            } catch (error) { }
         });
     }
 
@@ -1009,7 +1112,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const err = await response.json();
                     alert("Ошибка: " + err.error);
                 }
-            } catch (error) {}
+            } catch (error) { }
         });
     }
 
@@ -1095,7 +1198,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const err = await response.json();
                     alert("Ошибка: " + err.error);
                 }
-            } catch (error) {}
+            } catch (error) { }
         });
     }
 
@@ -1123,7 +1226,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const err = await response.json();
                     alert("Ошибка: " + err.error);
                 }
-            } catch (error) {}
+            } catch (error) { }
         });
     }
 });
