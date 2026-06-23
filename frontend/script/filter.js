@@ -1,0 +1,30 @@
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const categoryFilter = document.querySelector("#categoryFilter");
+    const priceSort = document.querySelector("#priceSort");
+
+    function applyFiltersAndSortFromAPI() {
+        const selectedCategory = categoryFilter.value;
+        const sortOrder = priceSort.value;
+        
+        const params = new URLSearchParams();
+        
+        if (selectedCategory !== "all") {
+            params.append("category", selectedCategory);
+        }
+        
+        if (sortOrder !== "default") {
+            params.append("sort", sortOrder);
+        }
+
+        const queryString = params.toString() ? `?${params.toString()}` : "";
+        console.log(queryString)
+        if (window.loadProducts) {
+            window.loadProducts(queryString);
+        }
+    }
+
+    if(categoryFilter) categoryFilter.addEventListener("change", applyFiltersAndSortFromAPI);
+    if(priceSort) priceSort.addEventListener("change", applyFiltersAndSortFromAPI);
+});

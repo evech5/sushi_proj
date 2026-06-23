@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUSHKA Суши Доставка</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/fe6925ae5e.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style/style.css">
+    <script src="script/script.js" defer></script>
+    <script src="script/filter.js" defer></script>
+</head>
+
+<body>
+    <header id="header">
+        <img src="images/logo.png" id="logoMock" alt="Логотип">
+        <div id="leftButtons">
+            <button id="burgerMenuBtn"><i class="fa-solid fa-bars"></i></button>
+            <div id="searchContainer">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input id="searchInput" type="text" placeholder="Поиск" autocomplete="off">
+                <div id="searchSuggestions" class="search-suggestions"></div>
+            </div>
+        </div>
+        <div id="rightButtons">
+            <div class="auth-wrapper" style="position: relative; display: flex;">
+                <button id="logIn" data-logged="false">
+                    <span>Войти</span>
+                    <i class="fa-solid fa-user"></i>
+                </button>
+                <div id="authDropdown" class="auth-dropdown">
+                    <div class="address-section">
+                        <label for="userAddressInput">Адрес доставки:</label>
+                        <input type="text" id="userAddressInput" placeholder="Укажите ваш адрес" autocomplete="off">
+                        <button id="saveAddressBtn">Сохранить адрес</button>
+                    </div>
+                    <button id="logoutBtn">Выйти</button>
+                </div>
+            </div>
+            <button id="basket">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <span>0 ₸</span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <nav id="categories">
+            <a href="#">АКЦИИ</a>
+            <button id="addCategoryNavBtn" class="add-category-nav-btn" type="button" style="display: none;">
+                <i class="fa-solid fa-plus"></i> Категория
+            </button>
+        </nav>
+
+        <div id="goods">
+            <section class="section" id="actions">
+                <h2>Акции</h2>
+                <div>
+                    <div class="action-box">
+                        <img src="images/action.jfif" alt="Акция">
+                    </div>
+                </div>
+            </section>
+
+            <div id="filterControlPanel" class="filter-control-panel">
+                <div class="filter-group">
+                    <label>Категория:</label>
+                    <select id="categoryFilter">
+                        <option value="all">Все товары</option>
+                    </select>
+                </div>
+
+                <div class="sort-group">
+                    <label>Сортировка цен:</label>
+                    <select id="priceSort">
+                        <option value="default">По умолчанию</option>
+                        <option value="low-to-high">Сначала дешевые</option>
+                        <option value="high-to-low">Сначала дорогие</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-left">
+                <span class="copyright">&copy; 2026 Магазин. Все права защищены.</span>
+            </div>
+            <div class="footer-center">
+                <a href="#about">О нас</a>
+                <a href="#delivery">Доставка</a>
+                <a href="#contacts">Контакты</a>
+            </div>
+            <div class="footer-right">
+                <a href="#tg" title="Telegram">TG</a>
+                <a href="#vk" title="VKontakte">VK</a>
+            </div>
+        </div>
+    </footer>
+
+    <button id="scrollToTopBtn" class="scroll-to-top-btn" title="Наверх">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    <div id="cartOverlay" class="cart-overlay"></div>
+
+    <aside id="cart" class="cart">
+        <div class="cart-header">
+            <h2>Корзина</h2>
+            <button id="closeCart" class="icon-btn">✕</button>
+        </div>
+        <div class="cart-body">
+            <p class="empty">Корзина пуста</p>
+        </div>
+        <div class="cart-footer">
+            <button class="primary-btn">Оформить заказ</button>
+        </div>
+    </aside>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <button id="closeModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-user"></i></div>
+            <h2 id="modalTitle">Вход</h2>
+            <form id="loginForm">
+                <div class="form-group" id="nameInputGroup" style="display: none; margin-bottom: 10px;">
+                    <input type="text" placeholder="Ваше имя" id="nameInput" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <input type="tel" placeholder="+7(7..." id="phoneInput" autocomplete="off">
+                </div>
+                <button type="submit" id="submitModalBtn">Войти</button>
+            </form>
+            <p id="toggleAuthMode" style="font-size: 13px; cursor: pointer; color: var(--text-muted-dark); margin-top: 10px; text-align: center;">
+                Нет аккаунта? Зарегистрироваться
+            </p>
+        </div>
+    </div>
+
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <button id="closeAdminModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-gear"></i></div>
+            <h2 id="adminModalTitle">Добавить товар</h2>
+            <form id="adminFormInline">
+                <input type="hidden" id="adminItemId">
+                <input type="hidden" id="adminItemCategory">
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="adminItemName" placeholder="Название товара" autocomplete="off" required>
+                </div>
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="adminItemDesc" placeholder="Состав/Описание (необязательно)" autocomplete="off">
+                </div>
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="number" id="adminItemPrice" placeholder="Цена (только цифры)" autocomplete="off" required>
+                </div>
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="adminItemImg" placeholder="Путь к фото (images/name.jpg)" value="images/default.jpg" autocomplete="off" required>
+                </div>
+                <button type="submit" id="adminSubmitBtnInline">Сохранить</button>
+                <button type="button" id="adminDeleteBtnInline" style="background: #ff3b30; margin-top: 5px; display: none;">Удалить товар</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <button id="closeCategoryModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-tags"></i></div>
+            <h2 id="categoryModalTitle">Добавить категорию</h2>
+            <form id="categoryFormInline">
+                <input type="hidden" id="categoryItemId">
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="categoryItemName" placeholder="Название категории" autocomplete="off" required>
+                </div>
+                <button type="submit" id="categorySubmitBtnInline">Сохранить</button>
+                <button type="button" id="categoryDeleteBtnInline" style="background: #ff3b30; margin-top: 5px; display: none;">Удалить категорию</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content">
+            <button id="closeCheckoutModal" type="button" class="icon-btn close-modal-btn">✕</button>
+            <div class="modal-icon"><i class="fa-solid fa-truck-fast"></i></div>
+            <h2>Оформление заказа</h2>
+            <form id="checkoutForm">
+                <div class="form-group" style="padding-top: 0;">
+                    <input type="text" id="checkoutAddressInput" placeholder="Адрес доставки" autocomplete="off" required>
+                </div>
+                <div style="font-size: 15px; margin: 10px 0; width: 100%; text-align: left; font-weight: 600;">
+                    Итого к оплате: <span id="checkoutTotalSum">0 ₸</span>
+                </div>
+                <button type="submit">Подтвердить заказ</button>
+            </form>
+        </div>
+    </div>
+    
+</body>
+
+</html>
