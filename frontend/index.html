@@ -10,11 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@100..900&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/fe6925ae5e.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style/style.css">
-
-    <!-- Подключение OpenStreetMap и Leaflet (Вместо Яндекса) -->
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
+    
     <script src="script/script.js" defer></script>
     <script src="script/filter.js" defer></script>
 </head>
@@ -37,11 +36,9 @@
                     <i class="fa-solid fa-user"></i>
                 </button>
                 <div id="authDropdown" class="auth-dropdown">
-                    <div class="address-section">
+                    <div class="address-section" id="profileAddressSection">
                         <label for="userAddressInput">Адрес доставки:</label>
-                        <!-- Поле теперь открывает карту при клике, как и в чекауте -->
-                        <input type="text" id="userAddressInput" placeholder="Нажмите для выбора на карте"
-                            autocomplete="off" readonly style="cursor: pointer;">
+                        <input type="text" id="userAddressInput" placeholder="Нажмите для выбора на карте" autocomplete="off" readonly style="cursor: pointer;">
                         <button id="saveAddressBtn">Сохранить адрес</button>
                     </div>
                     <button id="logoutBtn">Выйти</button>
@@ -67,7 +64,7 @@
                 <h2>Акции</h2>
                 <div>
                     <div class="action-box">
-                        <img src="images/action.jfif" alt="Акция">
+                        <img src="images/banners/b1.png" alt="Акция">
                     </div>
                 </div>
             </section>
@@ -142,8 +139,7 @@
                 </div>
                 <button type="submit" id="submitModalBtn">Войти</button>
             </form>
-            <p id="toggleAuthMode"
-                style="font-size: 13px; cursor: pointer; color: var(--text-muted-dark); margin-top: 10px; text-align: center;">
+            <p id="toggleAuthMode" style="font-size: 13px; cursor: pointer; color: var(--text-muted-dark); margin-top: 10px; text-align: center;">
                 Нет аккаунта? Зарегистрироваться
             </p>
         </div>
@@ -161,20 +157,16 @@
                     <input type="text" id="adminItemName" placeholder="Название товара" autocomplete="off" required>
                 </div>
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="text" id="adminItemDesc" placeholder="Состав/Описание (необязательно)"
-                        autocomplete="off">
+                    <input type="text" id="adminItemDesc" placeholder="Состав/Описание (необязательно)" autocomplete="off">
                 </div>
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="number" id="adminItemPrice" placeholder="Цена (только цифры)" autocomplete="off"
-                        required>
+                    <input type="number" id="adminItemPrice" placeholder="Цена (только цифры)" autocomplete="off" required>
                 </div>
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="text" id="adminItemImg" placeholder="Путь к фото (images/name.jpg)"
-                        value="images/default.jpg" autocomplete="off" required>
+                    <input type="text" id="adminItemImg" placeholder="Путь к фото (images/name.jpg)" value="images/default.jpg" autocomplete="off" required>
                 </div>
                 <button type="submit" id="adminSubmitBtnInline">Сохранить</button>
-                <button type="button" id="adminDeleteBtnInline"
-                    style="background: #ff3b30; margin-top: 5px; display: none;">Удалить товар</button>
+                <button type="button" id="adminDeleteBtnInline" style="background: #ff3b30; margin-top: 5px; display: none;">Удалить товар</button>
             </form>
         </div>
     </div>
@@ -187,53 +179,78 @@
             <form id="categoryFormInline">
                 <input type="hidden" id="categoryItemId">
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="text" id="categoryItemName" placeholder="Название категории" autocomplete="off"
-                        required>
+                    <input type="text" id="categoryItemName" placeholder="Название категории" autocomplete="off" required>
                 </div>
                 <button type="submit" id="categorySubmitBtnInline">Сохранить</button>
-                <button type="button" id="categoryDeleteBtnInline"
-                    style="background: #ff3b30; margin-top: 5px; display: none;">Удалить категорию</button>
+                <button type="button" id="categoryDeleteBtnInline" style="background: #ff3b30; margin-top: 5px; display: none;">Удалить категорию</button>
             </form>
         </div>
     </div>
 
     <div id="checkoutModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="width: 380px;">
             <button id="closeCheckoutModal" type="button" class="icon-btn close-modal-btn">✕</button>
             <div class="modal-icon"><i class="fa-solid fa-truck-fast"></i></div>
             <h2>Оформление заказа</h2>
-            <form id="checkoutForm">
+            <form id="checkoutForm" class="realistic-checkout-form">
+                
                 <div class="form-group" style="padding-top: 0;">
-                    <input type="text" id="checkoutAddressInput"
-                        placeholder="Адрес доставки (нажмите для выбора на карте)" autocomplete="off" readonly required
-                        style="cursor: pointer;">
+                    <label class="checkout-label">Куда везем?</label>
+                    <input type="text" id="checkoutAddressInput" placeholder="Нажмите для выбора на карте 📍" autocomplete="off" readonly required style="cursor: pointer;">
                 </div>
-                <div style="font-size: 15px; margin: 10px 0; width: 100%; text-align: left; font-weight: 600;">
-                    Итого к оплате: <span id="checkoutTotalSum">0 ₸</span>
+
+                <div class="form-row">
+                    <div class="form-group" style="padding-top: 0;">
+                        <label class="checkout-label">Время доставки</label>
+                        <select id="checkoutDeliveryTime" class="checkout-select">
+                            <option value="asap">Как можно скорее (~45 мин)</option>
+                            <option value="scheduled">Ко времени (предзаказ)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="padding-top: 0;">
+                        <label class="checkout-label">Оплата</label>
+                        <select id="checkoutPaymentMethod" class="checkout-select">
+                            <option value="card_courier">Картой курьеру</option>
+                            <option value="cash">Наличными</option>
+                        </select>
+                    </div>
                 </div>
-                <button type="submit">Подтвердить заказ</button>
+
+                <div class="form-group" style="padding-top: 0;">
+                    <label class="checkout-label">Комментарий к заказу (необязательно)</label>
+                    <textarea id="checkoutComment" placeholder="Подъезд, домофон, или сдача с 5000..." rows="2"></textarea>
+                </div>
+
+                <div class="checkout-summary">
+                    <div class="summary-row">
+                        <span>Сумма заказа:</span>
+                        <span id="checkoutTotalSum">0 ₸</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Доставка:</span>
+                        <span>Бесплатно</span>
+                    </div>
+                </div>
+                
+                <button type="submit" style="margin-top: 10px;">Подтвердить заказ</button>
             </form>
         </div>
     </div>
 
-    <!-- Обновленное широкое модальное окно карт OpenStreetMap -->
     <div id="mapModal" class="modal">
         <div class="modal-content map-modal-wide">
             <button id="closeMapModal" type="button" class="icon-btn close-modal-btn">✕</button>
             <div class="modal-icon"><i class="fa-solid fa-map-location-dot"></i></div>
             <h2>Выберите адрес на карте</h2>
-            <div id="deliveryMap"
-                style="width: 100%; height: 400px; margin-top: 15px; border-radius: 8px; background-color: #f0f0f0; z-index: 1;">
-            </div>
+            <div id="deliveryMap" style="width: 100%; height: 400px; margin-top: 15px; border-radius: 8px; background-color: #f0f0f0; z-index: 1;"></div>
             <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                <input type="text" id="mapSelectedAddressInput" readonly
-                    style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;"
-                    placeholder="Кликните на карту, чтобы выбрать адрес">
-                <button type="button" id="confirmMapAddressBtn" class="primary-btn"
-                    style="width: 100%; padding: 12px; font-weight: bold;" disabled>Подтвердить адрес</button>
+                <input type="text" id="mapSelectedAddressInput" readonly style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;" placeholder="Кликните на карту, чтобы выбрать адрес">
+                <button type="button" id="confirmMapAddressBtn" class="primary-btn" style="width: 100%; padding: 12px; font-weight: bold;" disabled>Подтвердить адрес</button>
             </div>
         </div>
     </div>
+    
+    <div id="toastContainer" class="toast-container"></div>
 
 </body>
 

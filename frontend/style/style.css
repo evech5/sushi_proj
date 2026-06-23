@@ -1348,3 +1348,128 @@ button {
         height: 300px !important; /* Чуть уменьшаем высоту карты на экранах смартфонов */
     }
 }
+/* --- СТИЛИ ШИРОКОЙ КАРТЫ --- */
+.modal-content.map-modal-wide {
+    max-width: 900px;
+    width: 85%;
+    box-sizing: border-box;
+    transition: width 0.3s ease, max-width 0.3s ease;
+}
+
+.leaflet-control-attribution {
+    font-size: 10px !important;
+}
+
+@media (max-width: 768px) {
+    .modal-content.map-modal-wide {
+        width: 95%;
+        max-width: 100%;
+        padding: 15px;
+    }
+    #deliveryMap {
+        height: 300px !important;
+    }
+}
+
+/* Новое расположение уведомлений: вверху справа */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.toast {
+    background-color: #ffffff;
+    color: #333;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-left: 4px solid #34c759;
+    pointer-events: all;
+    animation: slideInRight 0.3s ease-out forwards;
+}
+
+.toast.error { border-left-color: #ff3b30; }
+
+@keyframes slideInRight {
+    0% { opacity: 0; transform: translateX(50px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+/* --- СТИЛИ ДЛЯ РЕАЛИСТИЧНОГО ЧЕКАУТА --- */
+.realistic-checkout-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.checkout-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted-dark);
+    margin-bottom: 4px;
+    display: block;
+    text-align: left;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.checkout-select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    outline: none;
+    font-size: 13px;
+    font-family: inherit;
+    background-color: var(--bg-grey);
+    cursor: pointer;
+}
+
+textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    outline: none;
+    font-size: 13px;
+    font-family: inherit;
+    resize: none;
+    background-color: var(--bg-main);
+}
+textarea:focus { border-color: black; }
+
+.checkout-summary {
+    background: var(--bg-grey);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 5px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+.summary-row:last-child {
+    margin-bottom: 0;
+}
+.summary-row span:last-child {
+    font-weight: 800;
+}

@@ -2,7 +2,6 @@ let dataMapping = {};
 let isAdmin = false;
 
 let categoriesMap = {};
-
 let cartItems = [];
 
 function getCartStorageKey() {
@@ -17,6 +16,30 @@ function getCartStorageKey() {
 function loadCartFromStorage() {
     const key = getCartStorageKey();
     cartItems = JSON.parse(localStorage.getItem(key)) || [];
+}
+
+// ---------------------------------------------------------
+// Функция для красивых уведомлений (Вместо alert)
+// ---------------------------------------------------------
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    // Иконка в зависимости от типа
+    const icon = type === 'success' ? '<i class="fa-solid fa-check-circle" style="color:#34c759;"></i>' : '<i class="fa-solid fa-triangle-exclamation" style="color:#ff3b30;"></i>';
+    
+    toast.innerHTML = `${icon} <span>${message}</span>`;
+    container.appendChild(toast);
+
+    // Удаляем тост из DOM после завершения анимации (3.4 сек)
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 3400);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -39,23 +62,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.querySelector("#logoutBtn");
     const userAddressInput = document.querySelector("#userAddressInput");
     const saveAddressBtn = document.querySelector("#saveAddressBtn");
+    const profileAddressSection = document.querySelector("#profileAddressSection");
 
     const checkoutModal = document.querySelector("#checkoutModal");
     const closeCheckoutModal = document.querySelector("#closeCheckoutModal");
     const checkoutForm = document.querySelector("#checkoutForm");
     const checkoutAddressInput = document.querySelector("#checkoutAddressInput");
     const checkoutTotalSum = document.querySelector("#checkoutTotalSum");
+    
+    // Новые поля реалистичного чекаута
+    const checkoutDeliveryTime = document.querySelector("#checkoutDeliveryTime");
+    const checkoutPaymentMethod = document.querySelector("#checkoutPaymentMethod");
+    const checkoutComment = document.querySelector("#checkoutComment");
 
     const categoryFilter = document.querySelector("#categoryFilter");
     const priceSort = document.querySelector("#priceSort");
 
+    // Карта
     const mapModal = document.querySelector("#mapModal");
     const closeMapModal = document.querySelector("#closeMapModal");
     const confirmMapAddressBtn = document.querySelector("#confirmMapAddressBtn");
     const mapSelectedAddressInput = document.querySelector("#mapSelectedAddressInput");
     let leafletMapInstance = null;
     let mapPlacemark = null;
-
     let currentAddressTargetInput = null;
 
     const phoneRegex = /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/;
@@ -64,7 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateCartUI(skipPost = false) {
         localStorage.setItem(getCartStorageKey(), JSON.stringify(cartItems));
 
-        if (!skipPost) {
+        if (!skipPost && !isAdmin) {
             saveCartToDB();
         }
 
@@ -84,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cartItems.forEach((item, index) => {
             let numericPrice = 0;
             let displayPrice = "";
-
+            
             if (typeof item.price === 'string') {
                 numericPrice = parseInt(item.price.replace(/\D/g, ''));
                 displayPrice = item.price;
@@ -149,6 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
             cartItems.push({ ...item, quantity: 1 });
         }
         updateCartUI();
+        showToast("Товар добавлен в корзину", "success");
     }
 
     function createCard(item) {
@@ -177,20 +207,29 @@ document.addEventListener("DOMContentLoaded", () => {
             <p class="price">${displayPriceCard}</p>
         `;
 
+        // Клик по карточке: Админ открывает редактирование, Пользователь добавляет в корзину
         card.addEventListener("click", async () => {
+            if (isAdmin) {
+                window.openAdminModal('edit', item.id);
+                return;
+            }
             try {
                 const response = await fetch(`http://localhost:3000/api/products/${item.id}`);
                 if (response.ok) {
                     const productData = await response.json();
                     addItemToCart(productData);
                 }
-            } catch (error) { }
+            } catch (error) {
+                showToast("Ошибка связи с сервером", "error");
+            }
         });
 
         return card;
     }
 
     async function loadCartFromDB() {
+        if (isAdmin) return; // Админу не нужно грузить корзину
+
         const currentUser = localStorage.getItem("currentUser");
         if (!currentUser) {
             loadCartFromStorage();
@@ -209,14 +248,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`http://localhost:3000/api/cart/${user.id}`);
             if (response.ok) {
                 const dbCart = await response.json();
-
+                
                 if (cartItems.length > 0 && dbCart.length === 0) {
                     await saveCartToDB();
-                }
+                } 
                 else if (dbCart.length > 0) {
                     cartItems = dbCart;
                 }
-
+                
                 localStorage.setItem(`ui_cart_items_${user.phone}`, JSON.stringify(cartItems));
             } else {
                 loadCartFromStorage();
@@ -229,6 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function saveCartToDB() {
+        if (isAdmin) return; // Админу не сохраняем корзину
         const currentUser = localStorage.getItem("currentUser");
         if (!currentUser) return;
 
@@ -241,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ items: itemsToSend })
             });
-        } catch (error) { }
+        } catch (error) {}
     }
 
     window.loadProducts = async function (queryString = "") {
@@ -279,20 +319,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-        } catch (error) { }
+        } catch (error) {
+            showToast("Не удалось загрузить товары", "error");
+        }
     };
 
     function buildProductQueryString() {
         const params = new URLSearchParams();
-
         if (categoryFilter && categoryFilter.value !== "all") {
             params.append("category", categoryFilter.value);
         }
-
         if (priceSort && priceSort.value !== "default") {
             params.append("sort", priceSort.value);
         }
-
         return params.toString() ? `?${params.toString()}` : "";
     }
 
@@ -395,7 +434,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (window.loadProducts) {
                 window.loadProducts(buildProductQueryString());
             }
-        } catch (error) { }
+        } catch (error) {
+            showToast("Не удалось загрузить категории", "error");
+        }
     }
 
     loadCategories();
@@ -609,12 +650,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     phoneDisplay.className = "user-phone-info";
                     authDropdown.insertBefore(phoneDisplay, authDropdown.querySelector(".address-section"));
                 }
-                phoneDisplay.textContent = user.phone + " (Админ)";
+                phoneDisplay.textContent = user.phone;
             }
 
             if (userAddressInput) {
                 userAddressInput.value = user.address || "";
             }
+
+            // ПРОВЕРКА РОЛИ: Скрываем пользовательские элементы от администратора
+            if (isAdmin) {
+                if (basketBtn) basketBtn.style.display = "none";
+                if (profileAddressSection) profileAddressSection.style.display = "none";
+            } else {
+                if (basketBtn) basketBtn.style.display = "flex";
+                if (profileAddressSection) profileAddressSection.style.display = "flex";
+            }
+
         } else {
             isAdmin = false;
             if (loginBtnSpan) loginBtnSpan.textContent = "Войти";
@@ -631,6 +682,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (userAddressInput) {
                 userAddressInput.value = "";
             }
+            if (basketBtn) basketBtn.style.display = "flex";
+            if (profileAddressSection) profileAddressSection.style.display = "flex";
         }
 
         loadCartFromDB();
@@ -644,7 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const user = JSON.parse(currentUser);
                 user.address = userAddressInput.value.trim();
                 localStorage.setItem("currentUser", JSON.stringify(user));
-                alert("Адрес успешно сохранен!");
+                showToast("Адрес успешно сохранен!", "success");
             }
         });
     }
@@ -665,7 +718,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (cartItems.length === 0) {
-                alert("Ваша корзина пуста.");
+                showToast("Ваша корзина пуста.", "error");
                 return;
             }
 
@@ -690,12 +743,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ЛОГИКА ИНТЕГРАЦИИ КАРТ OPENSTREETMAP (LEAFLET)
-    // 1. Клик по адресу в Оформлении заказа
     if (checkoutAddressInput) {
         checkoutAddressInput.addEventListener("click", () => {
-            currentAddressTargetInput = checkoutAddressInput; // Запоминаем целевое поле
+            currentAddressTargetInput = checkoutAddressInput; 
             if (mapModal) mapModal.classList.add("active");
-
+            
             if (!leafletMapInstance && typeof L !== "undefined") {
                 initLeafletMap();
             } else if (leafletMapInstance) {
@@ -706,12 +758,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 2. Клик по адресу в Личном Кабинете (Открывает карту вместо ввода текста)
     if (userAddressInput) {
         userAddressInput.addEventListener("click", () => {
-            currentAddressTargetInput = userAddressInput; // Запоминаем целевое поле
+            currentAddressTargetInput = userAddressInput;
             if (mapModal) mapModal.classList.add("active");
-
+            
             if (!leafletMapInstance && typeof L !== "undefined") {
                 initLeafletMap();
             } else if (leafletMapInstance) {
@@ -753,24 +804,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ru`);
                 if (response.ok) {
                     const data = await response.json();
-
+                    
                     if (data && data.address) {
                         const addr = data.address;
-
-                        // Извлекаем только название улицы (road/street/etc) и номер дома
                         let street = addr.road || addr.street || addr.pedestrian || addr.suburb || "";
                         let houseNumber = addr.house_number || "";
-
+                        
                         let shortAddress = "";
                         if (street && houseNumber) {
                             shortAddress = `${street}, ${houseNumber}`;
                         } else if (street) {
                             shortAddress = street;
                         } else {
-                            // Резервный вариант, если структура OSM вернула сырую строку
                             shortAddress = data.display_name.split(',').slice(0, 2).join(',').trim();
                         }
-
+                        
                         if (mapSelectedAddressInput) {
                             mapSelectedAddressInput.value = shortAddress;
                         }
@@ -780,7 +828,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
             } catch (error) {
-                console.error("Ошибка геокодирования: ", error);
+                showToast("Ошибка определения адреса", "error");
             }
         });
     }
@@ -794,6 +842,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // ОТПРАВКА ЗАКАЗА С НОВЫМИ ПОЛЯМИ
     if (checkoutForm) {
         checkoutForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -804,7 +853,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const addressValue = checkoutAddressInput.value.trim();
 
             if (!addressValue) {
-                alert("Пожалуйста, укажите адрес доставки.");
+                showToast("Пожалуйста, укажите адрес доставки.", "error");
                 return;
             }
 
@@ -812,9 +861,13 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.setItem("currentUser", JSON.stringify(user));
             if (userAddressInput) userAddressInput.value = addressValue;
 
+            // Формируем payload с учетом новых полей из формы чекаута
             const orderData = {
                 userId: user.id,
                 address: addressValue,
+                paymentMethod: checkoutPaymentMethod ? checkoutPaymentMethod.value : 'cash',
+                deliveryTime: checkoutDeliveryTime ? checkoutDeliveryTime.value : 'asap',
+                comment: checkoutComment ? checkoutComment.value.trim() : '',
                 items: cartItems.map(item => ({ id: item.id, quantity: item.quantity }))
             };
 
@@ -826,16 +879,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (response.ok) {
-                    alert("Заказ успешно оформлен!");
+                    showToast("Заказ успешно оформлен!", "success");
                     cartItems = [];
                     updateCartUI();
                     if (checkoutModal) checkoutModal.classList.remove("active");
                 } else {
                     const err = await response.json();
-                    alert("Ошибка при оформлении заказа: " + (err.error || "Попробуйте позже"));
+                    showToast("Ошибка при оформлении: " + (err.error || "Попробуйте позже"), "error");
                 }
             } catch (error) {
-                alert("Ошибка соединения с сервером при оформлении заказа.");
+                showToast("Ошибка соединения с сервером.", "error");
             }
         });
     }
@@ -880,6 +933,7 @@ document.addEventListener("DOMContentLoaded", () => {
         logoutBtn.addEventListener("click", () => {
             localStorage.removeItem("currentUser");
             checkAuthStatus();
+            showToast("Вы успешно вышли", "success");
         });
     }
 
@@ -943,7 +997,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert(data.message);
+                    showToast(data.message || "Регистрация успешна!", "success");
 
                     const newUser = { id: data.userId, name: nameValue, phone: phoneValue, status: 'user', address: '' };
                     localStorage.setItem("currentUser", JSON.stringify(newUser));
@@ -952,10 +1006,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     loginForm.reset();
                     checkAuthStatus();
                 } else {
-                    alert("Ошибка регистрации: " + data.error);
+                    showToast("Ошибка: " + data.error, "error");
                 }
             } catch (error) {
-                alert("Не удалось связаться с сервером для регистрации.");
+                showToast("Сервер недоступен.", "error");
             }
         }
         else {
@@ -970,15 +1024,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (response.ok) {
                     localStorage.setItem("currentUser", JSON.stringify(data.user));
+                    showToast("Успешный вход", "success");
 
                     modal.classList.remove("active");
                     loginForm.reset();
                     checkAuthStatus();
                 } else {
-                    alert("Ошибка входа: " + data.error);
+                    showToast("Ошибка: " + data.error, "error");
                 }
             } catch (error) {
-                alert("Не удалось связаться с сервером для входа.");
+                showToast("Сервер недоступен.", "error");
             }
         }
     });
@@ -996,7 +1051,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     checkAuthStatus();
-
+    
     const adminModal = document.getElementById("adminModal");
     const closeAdminModal = document.getElementById("closeAdminModal");
     const adminFormInline = document.getElementById("adminFormInline");
@@ -1032,11 +1087,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 adminNameInput.value = product.title;
                 adminDescInput.value = product.desc || "";
-
+                
                 adminPriceInput.value = typeof product.price === 'string' ? product.price.replace(/\D/g, "") : product.price;
-
+                
                 adminImgInput.value = product.img;
-            } catch (e) { }
+            } catch (e) {
+                showToast("Ошибка загрузки данных товара", "error");
+            }
         }
 
         adminModal.classList.add("active");
@@ -1080,11 +1137,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.ok) {
                     adminModal.classList.remove("active");
                     window.loadProducts();
+                    showToast("Товар успешно сохранен", "success");
                 } else {
                     const err = await response.json();
-                    alert("Ошибка: " + err.error);
+                    showToast("Ошибка: " + err.error, "error");
                 }
-            } catch (error) { }
+            } catch (error) {
+                showToast("Ошибка соединения с сервером.", "error");
+            }
         });
     }
 
@@ -1108,11 +1168,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.ok) {
                     adminModal.classList.remove("active");
                     window.loadProducts();
+                    showToast("Товар удален", "success");
                 } else {
                     const err = await response.json();
-                    alert("Ошибка: " + err.error);
+                    showToast("Ошибка: " + err.error, "error");
                 }
-            } catch (error) { }
+            } catch (error) {
+                showToast("Ошибка соединения.", "error");
+            }
         });
     }
 
@@ -1194,11 +1257,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.ok) {
                     categoryModal.classList.remove("active");
                     loadCategories();
+                    showToast("Категория сохранена", "success");
                 } else {
                     const err = await response.json();
-                    alert("Ошибка: " + err.error);
+                    showToast("Ошибка: " + err.error, "error");
                 }
-            } catch (error) { }
+            } catch (error) {
+                showToast("Сервер недоступен", "error");
+            }
         });
     }
 
@@ -1222,11 +1288,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (response.ok) {
                     categoryModal.classList.remove("active");
                     loadCategories();
+                    showToast("Категория удалена", "success");
                 } else {
                     const err = await response.json();
-                    alert("Ошибка: " + err.error);
+                    showToast("Ошибка: " + err.error, "error");
                 }
-            } catch (error) { }
+            } catch (error) {
+                showToast("Сервер недоступен", "error");
+            }
         });
     }
 });
