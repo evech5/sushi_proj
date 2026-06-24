@@ -222,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (isKitchen) return;
 
             try {
-                const response = await fetch(`http://localhost:3000/api/products/${item.id}`);
+                const response = await fetch(`/api/products/${item.id}`);
                 if (response.ok) {
                     const productData = await response.json();
                     addItemToCart(productData);
@@ -253,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const response = await fetch(`http://localhost:3000/api/cart/${user.id}`);
+            const response = await fetch(`/api/cart/${user.id}`);
             if (response.ok) {
                 const dbCart = await response.json();
                 
@@ -284,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const itemsToSend = cartItems.map(item => ({ id: item.id, quantity: item.quantity }));
 
         try {
-            await fetch(`http://localhost:3000/api/cart/${user.id}`, {
+            await fetch(`/api/cart/${user.id}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ items: itemsToSend })
@@ -294,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.loadProducts = async function (queryString = "") {
         try {
-            const response = await fetch(`http://localhost:3000/api/products${queryString}`);
+            const response = await fetch(`/api/products${queryString}`);
             dataMapping = await response.json();
 
             document.querySelectorAll(".category").forEach(container => container.innerHTML = "");
@@ -345,7 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadCategories() {
         try {
-            const response = await fetch("http://localhost:3000/api/categories");
+            const response = await fetch("/api/categories");
             const categories = await response.json();
 
             categoriesMap = {};
@@ -929,7 +929,7 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             try {
-                const response = await fetch("http://localhost:3000/api/orders", {
+                const response = await fetch("/api/orders", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(orderData)
@@ -1045,7 +1045,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (authMode === "register") {
             try {
-                const response = await fetch("http://localhost:3000/api/register", {
+                const response = await fetch("/api/register", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ name: nameValue, phone: phoneValue })
@@ -1071,7 +1071,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         else {
             try {
-                const response = await fetch("http://localhost:3000/api/logIn", {
+                const response = await fetch("/api/logIn", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ phone: phoneValue })
@@ -1115,7 +1115,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.updateOrderStatus = async function(id, status) {
         const user = JSON.parse(localStorage.getItem("currentUser"));
         try {
-            const res = await fetch(`http://localhost:3000/api/orders/${id}/status`, {
+            const res = await fetch(`/api/orders/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
                 body: JSON.stringify({ status })
@@ -1135,7 +1135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const user = JSON.parse(localStorage.getItem("currentUser"));
         if (!user) return;
         try {
-            const res = await fetch("http://localhost:3000/api/orders", {
+            const res = await fetch("/api/orders", {
                 headers: { "x-user-id": user.id }
             });
             if (!res.ok) throw new Error();
@@ -1208,8 +1208,8 @@ document.addEventListener("DOMContentLoaded", () => {
         
         try {
             const url = phoneQuery 
-                ? `http://localhost:3000/api/users?phone=${encodeURIComponent(phoneQuery)}` 
-                : `http://localhost:3000/api/users`;
+                ? `/api/users?phone=${encodeURIComponent(phoneQuery)}` 
+                : `/api/users`;
 
             const res = await fetch(url, {
                 headers: { "x-user-id": currentUser.id }
@@ -1260,7 +1260,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.changeUserRole = async function(userId, newStatus) {
         const currentUser = JSON.parse(localStorage.getItem("currentUser"));
         try {
-            const res = await fetch(`http://localhost:3000/api/users/${userId}/status`, {
+            const res = await fetch(`/api/users/${userId}/status`, {
                 method: "PUT",
                 headers: { 
                     "Content-Type": "application/json",
@@ -1302,7 +1302,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!user) return;
 
         try {
-            const res = await fetch("http://localhost:3000/api/orders", {
+            const res = await fetch("/api/orders", {
                 headers: { "x-user-id": user.id }
             });
             if (!res.ok) throw new Error();
@@ -1373,7 +1373,7 @@ document.addEventListener("DOMContentLoaded", () => {
             adminDeleteBtn.style.display = "block";
 
             try {
-                const res = await fetch(`http://localhost:3000/api/products/${productId}`);
+                const res = await fetch(`/api/products/${productId}`);
                 const product = await res.json();
 
                 adminIdInput.value = product.id;
@@ -1405,7 +1405,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const productId = adminIdInput.value;
             const method = productId ? "PUT" : "POST";
-            const url = productId ? `http://localhost:3000/api/products/${productId}` : "http://localhost:3000/api/products";
+            const url = productId ? `/api/products/${productId}` : "/api/products";
 
             const productData = {
                 name: adminNameInput.value,
@@ -1454,7 +1454,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:3000/api/products/${productId}`, {
+                const response = await fetch(`/api/products/${productId}`, {
                     method: "DELETE",
                     headers: headers
                 });
@@ -1528,8 +1528,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const categoryId = categoryIdInput.value;
             const method = categoryId ? "PUT" : "POST";
             const url = categoryId
-                ? `http://localhost:3000/api/categories/${categoryId}`
-                : "http://localhost:3000/api/categories";
+                ? `/api/categories/${categoryId}`
+                : "/api/categories";
 
             const categoryData = {
                 name: categoryNameInput.value
@@ -1574,7 +1574,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:3000/api/categories/${categoryId}`, {
+                const response = await fetch(`/api/categories/${categoryId}`, {
                     method: "DELETE",
                     headers: headers
                 });
