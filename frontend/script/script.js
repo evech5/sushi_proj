@@ -29,9 +29,9 @@ function showToast(message, type = 'success') {
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
+
     const icon = type === 'success' ? '<i class="fa-solid fa-check-circle" style="color:#34c759;"></i>' : '<i class="fa-solid fa-triangle-exclamation" style="color:#ff3b30;"></i>';
-    
+
     toast.innerHTML = `${icon} <span>${message}</span>`;
     container.appendChild(toast);
 
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const userAddressInput = document.querySelector("#userAddressInput");
     const saveAddressBtn = document.querySelector("#saveAddressBtn");
     const profileAddressSection = document.querySelector("#profileAddressSection");
-    
+
     const myOrdersBtn = document.querySelector("#myOrdersBtn");
     const userOrdersModal = document.querySelector("#userOrdersModal");
     const closeUserOrdersModal = document.querySelector("#closeUserOrdersModal");
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const checkoutForm = document.querySelector("#checkoutForm");
     const checkoutAddressInput = document.querySelector("#checkoutAddressInput");
     const checkoutTotalSum = document.querySelector("#checkoutTotalSum");
-    
+
     const checkoutPaymentMethod = document.querySelector("#checkoutPaymentMethod");
     const checkoutComment = document.querySelector("#checkoutComment");
 
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cartItems.forEach((item, index) => {
             let numericPrice = 0;
             let displayPrice = "";
-            
+
             if (typeof item.price === 'string') {
                 numericPrice = parseInt(item.price.replace(/\D/g, ''));
                 displayPrice = item.price;
@@ -256,14 +256,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`/api/cart/${user.id}`);
             if (response.ok) {
                 const dbCart = await response.json();
-                
+
                 if (cartItems.length > 0 && dbCart.length === 0) {
                     await saveCartToDB();
-                } 
+                }
                 else if (dbCart.length > 0) {
                     cartItems = dbCart;
                 }
-                
+
                 localStorage.setItem(`ui_cart_items_${user.phone}`, JSON.stringify(cartItems));
             } else {
                 loadCartFromStorage();
@@ -276,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function saveCartToDB() {
-        if (isAdmin || isKitchen) return; 
+        if (isAdmin || isKitchen) return;
         const currentUser = localStorage.getItem("currentUser");
         if (!currentUser) return;
 
@@ -289,7 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ items: itemsToSend })
             });
-        } catch (error) {}
+        } catch (error) { }
     }
 
     window.loadProducts = async function (queryString = "") {
@@ -523,16 +523,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const categoriesNav = document.querySelector("#categories");
 
     if (burgerBtn && categoriesNav) {
-        burgerBtn.addEventListener("click", () => {
-            categoriesNav.classList.toggle("active");
-        });
+    // Открытие меню
+    burgerBtn.addEventListener("click", () => {
+        categoriesNav.classList.toggle("active");
+    });
 
-        categoriesNav.addEventListener("click", (e) => {
-            if (e.target.tagName === "A") {
-                categoriesNav.classList.remove("active");
-            }
-        });
-    }
+    // Закрытие при клике на любую ссылку в меню
+    categoriesNav.addEventListener("click", (e) => {
+        // .closest('a') ищет ссылку, даже если нажали на текст или иконку внутри нее
+        if (e.target.closest('a')) {
+            categoriesNav.classList.remove("active");
+        }
+    });
+}
+
+    document.addEventListener("click", (e) => {
+        if (
+            !categoriesNav.contains(e.target) &&
+            !burgerBtn.contains(e.target)
+        ) {
+            categoriesNav.classList.remove("active");
+        }
+    });
 
     const scrollToTopBtn = document.querySelector("#scrollToTopBtn");
 
@@ -701,7 +713,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (profileAddressSection) profileAddressSection.style.display = "none";
                 document.getElementById("kitchenDashboard").style.display = "none";
                 document.getElementById("goods").style.display = "block";
-                document.getElementById("categories").style.display = "flex";
+                document.getElementById("categories").style.display = "";
             } else if (isKitchen) {
                 if (manageUsersBtn) manageUsersBtn.style.display = "none";
                 if (myOrdersBtn) myOrdersBtn.style.display = "none";
@@ -718,7 +730,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (profileAddressSection) profileAddressSection.style.display = "flex";
                 document.getElementById("kitchenDashboard").style.display = "none";
                 document.getElementById("goods").style.display = "block";
-                document.getElementById("categories").style.display = "flex";
+                document.getElementById("categories").style.display = "";
             }
         } else {
             isAdmin = false;
@@ -741,10 +753,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (myOrdersBtn) myOrdersBtn.style.display = "none";
             if (basketBtn) basketBtn.style.display = "flex";
             if (profileAddressSection) profileAddressSection.style.display = "flex";
-            
+
             document.getElementById("kitchenDashboard").style.display = "none";
             document.getElementById("goods").style.display = "block";
-            document.getElementById("categories").style.display = "flex";
+            document.getElementById("categories").style.display = "";
         }
 
         loadCartFromDB();
@@ -805,9 +817,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (checkoutAddressInput) {
         checkoutAddressInput.addEventListener("click", () => {
-            currentAddressTargetInput = checkoutAddressInput; 
+            currentAddressTargetInput = checkoutAddressInput;
             if (mapModal) mapModal.classList.add("active");
-            
+
             if (!leafletMapInstance && typeof L !== "undefined") {
                 initLeafletMap();
             } else if (leafletMapInstance) {
@@ -822,7 +834,7 @@ document.addEventListener("DOMContentLoaded", () => {
         userAddressInput.addEventListener("click", () => {
             currentAddressTargetInput = userAddressInput;
             if (mapModal) mapModal.classList.add("active");
-            
+
             if (!leafletMapInstance && typeof L !== "undefined") {
                 initLeafletMap();
             } else if (leafletMapInstance) {
@@ -864,12 +876,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ru`);
                 if (response.ok) {
                     const data = await response.json();
-                    
+
                     if (data && data.address) {
                         const addr = data.address;
                         let street = addr.road || addr.street || addr.pedestrian || addr.suburb || "";
                         let houseNumber = addr.house_number || "";
-                        
+
                         let shortAddress = "";
                         if (street && houseNumber) {
                             shortAddress = `${street}, ${houseNumber}`;
@@ -878,7 +890,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         } else {
                             shortAddress = data.display_name.split(',').slice(0, 2).join(',').trim();
                         }
-                        
+
                         if (mapSelectedAddressInput) {
                             mapSelectedAddressInput.value = shortAddress;
                         }
@@ -1110,9 +1122,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     checkAuthStatus();
-    
+
     // --- ПАНЕЛЬ КУХНИ ---
-    window.updateOrderStatus = async function(id, status) {
+    window.updateOrderStatus = async function (id, status) {
         const user = JSON.parse(localStorage.getItem("currentUser"));
         try {
             const res = await fetch(`/api/orders/${id}/status`, {
@@ -1120,14 +1132,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
                 body: JSON.stringify({ status })
             });
-            if(res.ok) {
+            if (res.ok) {
                 showToast("Статус изменен", "success");
                 loadKitchenOrders();
             } else {
                 showToast("Ошибка при изменении статуса", "error");
             }
-        } catch(e) { 
-            showToast("Ошибка соединения", "error"); 
+        } catch (e) {
+            showToast("Ошибка соединения", "error");
         }
     }
 
@@ -1142,7 +1154,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const orders = await res.json();
             const container = document.getElementById("ordersContainer");
             container.innerHTML = "";
-            
+
             if (orders.length === 0) {
                 container.innerHTML = "<p style='padding: 20px;'>Нет активных заказов</p>";
                 return;
@@ -1152,7 +1164,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const card = document.createElement('div');
                 card.className = 'order-card';
                 let itemsHtml = o.items.map(i => `<li>${i.title} <strong>x${i.quantity}</strong></li>`).join('');
-                
+
                 const statusMap = {
                     'new': 'Новый',
                     'preparing': 'Готовится',
@@ -1177,7 +1189,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
                 container.appendChild(card);
             });
-        } catch(e) {
+        } catch (e) {
             showToast("Не удалось загрузить заказы", "error");
         }
     }
@@ -1185,7 +1197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (refreshOrdersBtn) {
         refreshOrdersBtn.addEventListener('click', loadKitchenOrders);
     }
-    
+
     // --- ПАНЕЛЬ АДМИНА ПОЛЬЗОВАТЕЛЕЙ ---
     if (manageUsersBtn) {
         manageUsersBtn.addEventListener('click', () => {
@@ -1195,30 +1207,30 @@ document.addEventListener("DOMContentLoaded", () => {
             loadUsersForAdmin();
         });
     }
-    
+
     if (closeUsersModal) {
         closeUsersModal.addEventListener('click', () => {
             if (usersModal) usersModal.classList.remove('active');
         });
     }
-    
+
     async function loadUsersForAdmin(phoneQuery = "") {
         const currentUser = JSON.parse(localStorage.getItem("currentUser"));
         if (!currentUser) return;
-        
+
         try {
-            const url = phoneQuery 
-                ? `/api/users?phone=${encodeURIComponent(phoneQuery)}` 
+            const url = phoneQuery
+                ? `/api/users?phone=${encodeURIComponent(phoneQuery)}`
                 : `/api/users`;
 
             const res = await fetch(url, {
                 headers: { "x-user-id": currentUser.id }
             });
-            
+
             if (res.ok) {
                 const users = await res.json();
                 const container = document.getElementById("usersContainer");
-                
+
                 let html = `
                     <div class="user-row user-row-header">
                         <span>ID</span>
@@ -1234,7 +1246,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 users.forEach(u => {
                     const disabled = (u.id === currentUser.id) ? 'disabled title="Нельзя изменить свою собственную роль"' : '';
-                    
+
                     html += `
                         <div class="user-row">
                             <span>#${u.id}</span>
@@ -1256,19 +1268,19 @@ document.addEventListener("DOMContentLoaded", () => {
             showToast("Ошибка соединения с сервером", "error");
         }
     }
-    
-    window.changeUserRole = async function(userId, newStatus) {
+
+    window.changeUserRole = async function (userId, newStatus) {
         const currentUser = JSON.parse(localStorage.getItem("currentUser"));
         try {
             const res = await fetch(`/api/users/${userId}/status`, {
                 method: "PUT",
-                headers: { 
+                headers: {
                     "Content-Type": "application/json",
-                    "x-user-id": currentUser.id 
+                    "x-user-id": currentUser.id
                 },
                 body: JSON.stringify({ status: newStatus })
             });
-            
+
             if (res.ok) {
                 showToast("Роль пользователя успешно обновлена", "success");
             } else {
@@ -1322,9 +1334,9 @@ document.addEventListener("DOMContentLoaded", () => {
             myOrders.forEach(o => {
                 const card = document.createElement('div');
                 card.className = 'order-card';
-                
+
                 let itemsHtml = o.items.map(i => `<li>${i.title} <strong>x${i.quantity}</strong></li>`).join('');
-                
+
                 const statusMap = {
                     'new': 'В обработке',
                     'preparing': 'Готовится',
@@ -1381,9 +1393,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 adminNameInput.value = product.title;
                 adminDescInput.value = product.desc || "";
-                
+
                 adminPriceInput.value = typeof product.price === 'string' ? product.price.replace(/\D/g, "") : product.price;
-                
+
                 adminImgInput.value = product.img;
             } catch (e) {
                 showToast("Ошибка загрузки данных товара", "error");

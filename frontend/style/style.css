@@ -1071,7 +1071,7 @@ button {
     background: white;
     border-radius: var(--border-radius);
     padding: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     border: 1px solid #eee;
     display: flex;
     flex-direction: column;
@@ -1109,10 +1109,25 @@ button {
     font-weight: bold;
 }
 
-.status-badge.new { background: #ff3b30; color: white; }
-.status-badge.preparing { background: #ffcc00; color: black; }
-.status-badge.ready { background: #34c759; color: white; }
-.status-badge.delivered { background: #e5e5ea; color: #8e8e93; }
+.status-badge.new {
+    background: #ff3b30;
+    color: white;
+}
+
+.status-badge.preparing {
+    background: #ffcc00;
+    color: black;
+}
+
+.status-badge.ready {
+    background: #34c759;
+    color: white;
+}
+
+.status-badge.delivered {
+    background: #e5e5ea;
+    color: #8e8e93;
+}
 
 .order-actions button {
     background: var(--bg-dark);
@@ -1293,20 +1308,23 @@ button {
 
     #categories {
         display: none;
+        /* Изначально скрыто */
         position: fixed;
         top: 80px;
         left: 0;
         width: 100%;
-        max-height: calc(100vh - 80px);
-        overflow-y: auto;
+        height: calc(100vh - 80px);
+        background-color: white;
         z-index: 9999;
-        background-color: #ffffff;
+        flex-direction: column;
+        overflow-y: auto;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        border-radius: 0 0 var(--border-radius) var(--border-radius);
+        padding: 0;
     }
 
+
     #categories.active {
-        display: flex;
+        display: flex !important;
         flex-direction: column;
         gap: 0;
         padding: 0;
@@ -1319,6 +1337,10 @@ button {
         box-sizing: border-box;
         border-bottom: 1px solid #eeeeee;
         font-size: 16px;
+    }
+
+    #categories.active a {
+        display: block;
     }
 
     #categories a:hover::after {
@@ -1442,27 +1464,35 @@ button {
         width: 100%;
         box-sizing: border-box;
     }
-    
+
     /* Адаптив таблицы пользователей */
     .user-row {
         grid-template-columns: 1fr;
         gap: 6px;
         text-align: left;
     }
-    
+
     .user-row-header {
         display: none;
     }
-    
+
     .user-row span::before {
         font-weight: 700;
         display: inline-block;
         width: 80px;
     }
-    
-    .user-row span:nth-child(1)::before { content: "ID:"; }
-    .user-row span:nth-child(2)::before { content: "Имя:"; }
-    .user-row span:nth-child(3)::before { content: "Телефон:"; }
+
+    .user-row span:nth-child(1)::before {
+        content: "ID:";
+    }
+
+    .user-row span:nth-child(2)::before {
+        content: "Имя:";
+    }
+
+    .user-row span:nth-child(3)::before {
+        content: "Телефон:";
+    }
 }
 
 /* Широкое окно карты для десктопа */
@@ -1485,8 +1515,10 @@ button {
         max-width: 100%;
         padding: 15px;
     }
+
     #deliveryMap {
-        height: 300px !important; /* Чуть уменьшаем высоту карты на экранах смартфонов */
+        height: 300px !important;
+        /* Чуть уменьшаем высоту карты на экранах смартфонов */
     }
 }
 
@@ -1509,7 +1541,7 @@ button {
     border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1518,11 +1550,20 @@ button {
     animation: slideInRight 0.3s ease-out forwards;
 }
 
-.toast.error { border-left-color: #ff3b30; }
+.toast.error {
+    border-left-color: #ff3b30;
+}
 
 @keyframes slideInRight {
-    0% { opacity: 0; transform: translateX(50px); }
-    100% { opacity: 1; transform: translateX(0); }
+    0% {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* --- СТИЛИ ДЛЯ РЕАЛИСТИЧНОГО ЧЕКАУТА --- */
@@ -1570,7 +1611,10 @@ textarea {
     resize: none;
     background-color: var(--bg-main);
 }
-textarea:focus { border-color: black; }
+
+textarea:focus {
+    border-color: black;
+}
 
 .checkout-summary {
     background: var(--bg-grey);
@@ -1586,9 +1630,11 @@ textarea:focus { border-color: black; }
     font-weight: 600;
     margin-bottom: 5px;
 }
+
 .summary-row:last-child {
     margin-bottom: 0;
 }
+
 .summary-row span:last-child {
     font-weight: 800;
 }
